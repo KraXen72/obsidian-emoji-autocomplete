@@ -4,8 +4,8 @@ import uFuzzy from '@leeoniya/ufuzzy';
 
 import EmojiMarkdownPostProcessor from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
+import { gemojiFromShortcode, typeAheadSort } from './util';
 // import DefinitionListPostProcessor from './definitionListPostProcessor';
-// import { checkForInputBlock } from './util';
 
 export default class EmojiShortcodesPlugin extends Plugin {
 
@@ -62,7 +62,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
 		this.plugin = plugin;
-		this.fuzzy = new uFuzzy();
+		this.fuzzy = new uFuzzy({ sort: typeAheadSort });
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
@@ -71,14 +71,6 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		const match = sub.match(/:\S+$/)?.first();
 		if (!match) return null;
 		
-		// https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295
-		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, match);
-		console.log("-----------")
-		for (let i = 0; i < 10; i++) {
-			// using info.idx here instead of idxs because uf.info() may have
-			// further reduced the initial idxs based on prefix/suffix rules
-			console.log(this.plugin.shortcodeList[info.idx[order[i]]]);
-		}
 		return {
 			end: cursor,
 			start: {
@@ -90,8 +82,19 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	}
 
 	getSuggestions(context: EditorSuggestContext): Gemoji[] {
-		let emoji_query = context.query.replace(':', '').toLowerCase();
-		return this.plugin.emojiList.filter(e => e.names.some(n => n.includes(emoji_query)));
+		let emoji_query = context.query.replace(':', '')
+
+		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, emoji_query, 1);
+		const suggestions = []
+		// using info.idx here instead of idxs because uf.info() may have
+		// further reduced the initial idxs based on prefix/suffix rules
+		for (let i = 0; i < Math.min(10, (order?.length || 0)); i++) {
+			const sc = this.plugin.shortcodeList[info.idx[order[i]]]
+			suggestions.push(gemojiFromShortcode(sc))
+			// change emojiList to an object of indexes 
+		}
+
+		return suggestions//this.plugin.emojiList.filter(e => e.names.some(n => n.includes(emoji_query)));
 	}
 
 	renderSuggestion(suggestion: Gemoji, el: HTMLElement) {
