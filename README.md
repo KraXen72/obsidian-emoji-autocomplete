@@ -1,6 +1,13 @@
-# Obsidian Emoji Shortcodes [![GitHub tag (Latest by date)](https://img.shields.io/github/v/tag/phibr0/obsidian-emoji-shortcodes)](https://github.com/phibr0/obsidian-emoji-shortcodes/releases) ![GitHub all releases](https://img.shields.io/github/downloads/phibr0/obsidian-emoji-shortcodes/total)
+# Obsidian Emoji Autocomplete 
+<!-- [![GitHub tag (Latest by date)](https://img.shields.io/github/v/tag/phibr0/obsidian-emoji-shortcodes)](https://github.com/phibr0/obsidian-emoji-shortcodes/releases) ![GitHub all releases](https://img.shields.io/github/downloads/phibr0/obsidian-emoji-shortcodes/total) -->
 
-<img align="right" width="550" src="https://user-images.githubusercontent.com/59741989/129605183-1295bfbb-760d-4b45-bf94-452f38f2b54c.gif">
+<!-- <img align="right" width="550" src="https://user-images.githubusercontent.com/59741989/129605183-1295bfbb-760d-4b45-bf94-452f38f2b54c.gif"> -->
+
+This is a fork of the [Emoji Shortcodes](https://github.com/phibr0/obsidian-emoji-shortcodes) plugin.  
+  
+## The aim of this fork (TBD)
+- use the [gemoji](https://github.com/wooorm/gemoji) library instead of maintaining own list of emoji
+- use the [uFuzzy](https://github.com/leeoniya/uFuzzy) library for better fuzzy serach suggestions
 
 This Plugin adds Support for Emoji Shortcodes in Obsidian. You can find Emoji Shortcodes [here](https://emojipedia.org/).
 
