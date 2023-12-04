@@ -66,29 +66,27 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
-		if (this.plugin.settings.suggester) {
-			const sub = editor.getLine(cursor.line).substring(0, cursor.ch);
-			const match = sub.match(/:\S+$/)?.first();
-			// https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295
-			if (match) {
-				let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, match);
-				console.log("-----------")
-				for (let i = 0; i < 10; i++) {
-					// using info.idx here instead of idxs because uf.info() may have
-					// further reduced the initial idxs based on prefix/suffix rules
-					console.log(this.plugin.shortcodeList[info.idx[order[i]]]);
-				}
-				return {
-					end: cursor,
-					start: {
-						ch: sub.lastIndexOf(match),
-						line: cursor.line,
-					},
-					query: match,
-				}
-			}
+		if (!this.plugin.settings.suggester) return null;
+		const sub = editor.getLine(cursor.line).substring(0, cursor.ch);
+		const match = sub.match(/:\S+$/)?.first();
+		if (!match) return null;
+		
+		// https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295
+		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, match);
+		console.log("-----------")
+		for (let i = 0; i < 10; i++) {
+			// using info.idx here instead of idxs because uf.info() may have
+			// further reduced the initial idxs based on prefix/suffix rules
+			console.log(this.plugin.shortcodeList[info.idx[order[i]]]);
 		}
-		return null;
+		return {
+			end: cursor,
+			start: {
+				ch: sub.lastIndexOf(match),
+				line: cursor.line,
+			},
+			query: match,
+		}
 	}
 
 	getSuggestions(context: EditorSuggestContext): Gemoji[] {
