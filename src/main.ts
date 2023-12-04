@@ -1,14 +1,14 @@
-import { Platform, Plugin, EditorSuggest, Editor, EditorPosition, TFile, EditorSuggestTriggerInfo, EditorSuggestContext } from 'obsidian';
-import DefinitionListPostProcessor from './definitionListPostProcessor';
-import { emoji } from './emojiList';
+import { Plugin, EditorSuggest, Editor, EditorPosition, TFile, EditorSuggestTriggerInfo, EditorSuggestContext } from 'obsidian';
+import { gemoji, type Gemoji } from 'gemoji'
 import EmojiMarkdownPostProcessor from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
-import { checkForInputBlock } from './util';
+// import DefinitionListPostProcessor from './definitionListPostProcessor';
+// import { checkForInputBlock } from './util';
 
 export default class EmojiShortcodesPlugin extends Plugin {
 
 	settings: EmojiPluginSettings;
-	emojiList: string[];
+	emojiList: Gemoji[];
 
 	async onload() {
 		await this.loadSettings();
@@ -30,8 +30,9 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	}
 
 	updateEmojiList() {
-		const set = new Set(this.settings.history)
-		this.emojiList = [...this.settings.history, ...Object.keys(emoji).filter(e => !set.has(e))];
+		// const set = new Set(this.settings.history)
+		// this.emojiList = [...this.settings.history, ...Object.keys(emoji).filter(e => !set.has(e))];
+		this.emojiList = gemoji
 	}
 
 	updateHistory(suggestion: string) {
@@ -45,7 +46,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	}
 }
 
-class EmojiSuggester extends EditorSuggest<string> {
+class EmojiSuggester extends EditorSuggest<Gemoji> {
 	plugin: EmojiShortcodesPlugin;
 
 	constructor(plugin: EmojiShortcodesPlugin) {
@@ -71,22 +72,21 @@ class EmojiSuggester extends EditorSuggest<string> {
 		return null;
 	}
 
-	getSuggestions(context: EditorSuggestContext): string[] {
+	getSuggestions(context: EditorSuggestContext): Gemoji[] {
 		let emoji_query = context.query.replace(':', '').toLowerCase();
-		return this.plugin.emojiList.filter(p => p.includes(emoji_query));
+		return this.plugin.emojiList.filter(e => e.names.some(n => n.includes(emoji_query)));
 	}
 
-	renderSuggestion(suggestion: string, el: HTMLElement): void {
+	renderSuggestion(suggestion: Gemoji, el: HTMLElement) {
 		const outer = el.createDiv({ cls: "ES-suggester-container" });
-		outer.createDiv({ cls: "ES-shortcode" }).setText(suggestion.replace(/:/g, ""));
-		//@ts-expect-error
-		outer.createDiv({ cls: "ES-emoji" }).setText(emoji[suggestion]);
+		outer.createDiv({ cls: "ES-shortcode" }).setText(suggestion.names[0].replace(/:/g, ""));
+		outer.createDiv({ cls: "ES-emoji" }).setText(suggestion.emoji);
 	}
 
-	selectSuggestion(suggestion: string): void {
+	selectSuggestion(suggestion: Gemoji): void {
 		if(this.context) {
-			(this.context.editor as Editor).replaceRange(this.plugin.settings.immediateReplace ? emoji[suggestion] : `${suggestion} `, this.context.start, this.context.end);
-			this.plugin.updateHistory(suggestion);
+			(this.context.editor as Editor).replaceRange(this.plugin.settings.immediateReplace ? suggestion.emoji : `${suggestion} `, this.context.start, this.context.end);
+			// this.plugin.updateHistory(suggestion);
 		}
 	}
 }
