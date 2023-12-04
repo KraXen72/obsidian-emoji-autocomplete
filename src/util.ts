@@ -34,7 +34,7 @@ export function typeAheadSort(info: uFuzzy.Info, haystack: string[], needle: str
 		// least char intra-fuzz (most contiguous)
 		intraIns[ia] - intraIns[ib] ||
 		// earliest start of match
-		start[ia] - start[ib] ||
+		// start[ia] - start[ib] ||
 		// shortest match first
 		haystack[idx[ia]].length - haystack[idx[ib]].length ||
 		// most prefix bounds, boosted by full term matches

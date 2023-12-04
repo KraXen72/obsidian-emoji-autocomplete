@@ -11,6 +11,9 @@ a[href="https://ko-fi.com/phibr0"]
 .ES-suggester-container {
   display: flex;
   place-content: space-between;
+  min-width: 12.5rem;
+  width: max-content;
+  max-width: 100vw;
 }
 
 .ES-shortcode {

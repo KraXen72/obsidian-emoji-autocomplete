@@ -10,8 +10,10 @@ import { gemojiFromShortcode, typeAheadSort } from './util';
 export default class EmojiShortcodesPlugin extends Plugin {
 
 	settings: EmojiPluginSettings;
-	emojiList: Gemoji[];
+	readonly emojiList: Gemoji[];
 	shortcodeList: string[]
+	shortcodeIndexes: Record<string, number> = {}
+	tagIndexes: Record<string, number> = {}
 
 	async onload() {
 		await this.loadSettings();
@@ -35,13 +37,25 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	updateEmojiList() {
 		// const set = new Set(this.settings.history)
 		// this.emojiList = [...this.settings.history, ...Object.keys(emoji).filter(e => !set.has(e))];
-		this.emojiList = gemoji
+
+		(this.emojiList as Gemoji[]) = gemoji
 		const shortcodeSet: Set<string> = new Set()
-		for (const emoji of gemoji) {
-			emoji.names.forEach(n => shortcodeSet.add(n))
+		for (let i = 0; i < gemoji.length; i++) {
+			const emoji = gemoji[i]
+			emoji.names.forEach(n => {
+				shortcodeSet.add(n)
+				this.shortcodeIndexes[n] = i
+			})
+			// emoji.tags.forEach(t => this.tagIndexes[t] ??= i)
 		}
 		this.shortcodeList = Array.from(shortcodeSet)
-		
+	}
+
+	indexedGemojiFromShortcode(shortcode: string) {
+		if (!(shortcode in this.shortcodeIndexes)) return null;
+		const index = this.shortcodeIndexes[shortcode]
+		const gemoji = this.emojiList[index]
+		return gemoji ?? null;
 	}
 
 	updateHistory(suggestion: string) {
@@ -58,19 +72,20 @@ export default class EmojiShortcodesPlugin extends Plugin {
 class EmojiSuggester extends EditorSuggest<Gemoji> {
 	plugin: EmojiShortcodesPlugin;
 	fuzzy: uFuzzy;
+	resultLimit = 18;
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
 		this.plugin = plugin;
-		this.fuzzy = new uFuzzy({ sort: typeAheadSort });
+		this.fuzzy = new uFuzzy({ sort: typeAheadSort,  });
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
 		if (!this.plugin.settings.suggester) return null;
 		const sub = editor.getLine(cursor.line).substring(0, cursor.ch);
-		const match = sub.match(/:\S+$/)?.first();
+		const match = sub.match(/:\S.+$/)?.first();
+		console.log(match)
 		if (!match) return null;
-		
 		return {
 			end: cursor,
 			start: {
@@ -83,18 +98,21 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 
 	getSuggestions(context: EditorSuggestContext): Gemoji[] {
 		let emoji_query = context.query.replace(':', '')
-
-		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, emoji_query, 1);
+		console.time("search")
+		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, emoji_query);
 		const suggestions = []
+		console.log("q:", emoji_query)
 		// using info.idx here instead of idxs because uf.info() may have
 		// further reduced the initial idxs based on prefix/suffix rules
-		for (let i = 0; i < Math.min(10, (order?.length || 0)); i++) {
-			const sc = this.plugin.shortcodeList[info.idx[order[i]]]
-			suggestions.push(gemojiFromShortcode(sc))
-			// change emojiList to an object of indexes 
+		for (let i = 0; i < Math.min(this.resultLimit, (order?.length || 0)); i++) {
+			const idxs2 = info.idx || idxs;
+			const sc = this.plugin.shortcodeList[idxs2[order[i]]]
+			const gemoji = this.plugin.indexedGemojiFromShortcode(sc)
+			if (gemoji) suggestions.push(gemoji)
 		}
-
-		return suggestions//this.plugin.emojiList.filter(e => e.names.some(n => n.includes(emoji_query)));
+		console.timeEnd("search")
+		return suggestions
+		//this.plugin.emojiList.filter(e => e.names.some(n => n.includes(emoji_query)));
 	}
 
 	renderSuggestion(suggestion: Gemoji, el: HTMLElement) {
@@ -104,9 +122,8 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	}
 
 	selectSuggestion(suggestion: Gemoji): void {
-		if(this.context) {
-			(this.context.editor as Editor).replaceRange(this.plugin.settings.immediateReplace ? suggestion.emoji : `${suggestion} `, this.context.start, this.context.end);
-			// this.plugin.updateHistory(suggestion);
-		}
+		if(!this.context) return;
+		const { start, end } = this.context;
+		(this.context.editor as Editor).replaceRange(this.plugin.settings.immediateReplace ? suggestion.emoji : `${suggestion} `, start, end);
 	}
 }
