@@ -1,5 +1,7 @@
 import { Plugin, EditorSuggest, Editor, EditorPosition, TFile, EditorSuggestTriggerInfo, EditorSuggestContext } from 'obsidian';
 import { gemoji, type Gemoji } from 'gemoji'
+import uFuzzy from '@leeoniya/ufuzzy';
+
 import EmojiMarkdownPostProcessor from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
 // import DefinitionListPostProcessor from './definitionListPostProcessor';
@@ -9,6 +11,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 
 	settings: EmojiPluginSettings;
 	emojiList: Gemoji[];
+	shortcodeList: string[]
 
 	async onload() {
 		await this.loadSettings();
@@ -33,6 +36,12 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		// const set = new Set(this.settings.history)
 		// this.emojiList = [...this.settings.history, ...Object.keys(emoji).filter(e => !set.has(e))];
 		this.emojiList = gemoji
+		const shortcodeSet: Set<string> = new Set()
+		for (const emoji of gemoji) {
+			emoji.names.forEach(n => shortcodeSet.add(n))
+		}
+		this.shortcodeList = Array.from(shortcodeSet)
+		
 	}
 
 	updateHistory(suggestion: string) {
@@ -48,17 +57,27 @@ export default class EmojiShortcodesPlugin extends Plugin {
 
 class EmojiSuggester extends EditorSuggest<Gemoji> {
 	plugin: EmojiShortcodesPlugin;
+	fuzzy: uFuzzy;
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
 		this.plugin = plugin;
+		this.fuzzy = new uFuzzy();
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
 		if (this.plugin.settings.suggester) {
 			const sub = editor.getLine(cursor.line).substring(0, cursor.ch);
 			const match = sub.match(/:\S+$/)?.first();
+			// https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295
 			if (match) {
+				let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, match);
+				console.log("-----------")
+				for (let i = 0; i < 10; i++) {
+					// using info.idx here instead of idxs because uf.info() may have
+					// further reduced the initial idxs based on prefix/suffix rules
+					console.log(this.plugin.shortcodeList[info.idx[order[i]]]);
+				}
 				return {
 					end: cursor,
 					start: {

@@ -7,7 +7,9 @@ const shortcodeRegex = /[:][^\s:][^ \n:]*[:]/g
 export default class EmojiMarkdownPostProcessor {
 
   static emojiProcessor: MarkdownPostProcessor = (el: HTMLElement) => {
-		el.innerText.match(shortcodeRegex)?.forEach(shcode => EmojiMarkdownPostProcessor.emojiReplace(shcode, el)); 
+		const matches = el.innerText.match(shortcodeRegex)
+		if (matches === null) return;
+		matches.forEach(shortcode => EmojiMarkdownPostProcessor.emojiReplace(shortcode, el)); 
 	}
 
 	static emojiReplace(shortcode: string, el: HTMLElement){
