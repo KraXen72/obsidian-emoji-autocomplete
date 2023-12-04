@@ -1,21 +1,21 @@
 import { MarkdownPostProcessor } from "obsidian";
-import { emoji } from "./emojiList";
+import { gemojiFromShortcode } from "./util";
+
+const skippedTagTypes = ["code", "mjx"]
+const shortcodeRegex = /[:][^\s:][^ \n:]*[:]/g
 
 export default class EmojiMarkdownPostProcessor {
 
-    static emojiProcessor: MarkdownPostProcessor = (el: HTMLElement) => {
-		el.innerText.match(/[:][^\s:][^ \n:]*[:]/g)?.forEach((e: keyof typeof emoji) => EmojiMarkdownPostProcessor.emojiReplace(e, el)); 
+  static emojiProcessor: MarkdownPostProcessor = (el: HTMLElement) => {
+		el.innerText.match(shortcodeRegex)?.forEach(shcode => EmojiMarkdownPostProcessor.emojiReplace(shcode, el)); 
 	}
 
-	static emojiReplace(shortcode: keyof typeof emoji, el: HTMLElement){
-		if ((typeof el.tagName ==="string") && (el.tagName.indexOf("CODE") !== -1 || el.tagName.indexOf("MJX") !== -1)) {
-			return false;
-		}
+	static emojiReplace(shortcode: string, el: HTMLElement){
+		if ((typeof el.tagName ==="string") && (skippedTagTypes.some(tagType => el.tagName.toLowerCase().includes(tagType)))) return false;
 		if (el.hasChildNodes()){
 			el.childNodes.forEach((child: ChildNode) => this.emojiReplace(shortcode, child as HTMLElement));
 		} else {
-			el.textContent = el.textContent.replace(shortcode, emoji[shortcode] ?? shortcode);
+			el.textContent = el.textContent.replace(shortcode, gemojiFromShortcode(shortcode).emoji);
 		}
 	}
-
 }
