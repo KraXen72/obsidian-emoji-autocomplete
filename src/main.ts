@@ -54,7 +54,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		for (let i = 0; i < gemoji.length; i++) {
 			const emoji = gemoji[i]
 			let supported = true
-			if (emoji.names.includes('large_blue_circle')) emoji.names.push('blue_circle')
+			if (emoji.names.includes('large_blue_circle')) emoji.names.unshift('blue_circle')
 
 			for (const n of emoji.names) {
 				if (!(n in this.settings.emojiSupported)) {
