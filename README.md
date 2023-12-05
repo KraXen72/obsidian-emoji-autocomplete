@@ -9,6 +9,9 @@
   - allow some fuzzyness when searching
   - more relevant and smart results
 - highlight matched part of emoji (optional)
+- better emoji history
+  - doesen't overwrite most relevant result
+  - nice icon
 
 **Example**
 <img width="550" src="https://user-images.githubusercontent.com/59741989/129605183-1295bfbb-760d-4b45-bf94-452f38f2b54c.gif">  

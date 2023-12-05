@@ -4,7 +4,7 @@ import uFuzzy from '@leeoniya/ufuzzy';
 
 import EmojiMarkdownPostProcessor from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
-import { iconHistory, slimHighlight, typeAheadSort } from './util';
+import { iconHistory, slimHighlight } from './util';
 
 // import DefinitionListPostProcessor from './definitionListPostProcessor';
 
@@ -82,6 +82,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 class EmojiSuggester extends EditorSuggest<Gemoji> {
 	plugin: EmojiShortcodesPlugin;
 	fuzzy: uFuzzy;
+	cmp = new Intl.Collator('en').compare;
 	resultLimit = 18;
 	// queryRegex = new RegExp(/:[^:\s\p{Emoji}]+:?$/);
 	queryRegex = new RegExp(/:\S.+$/);
@@ -89,8 +90,60 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
 		this.plugin = plugin;
-		this.fuzzy = new uFuzzy({ sort: typeAheadSort });
+		this.fuzzy = new uFuzzy({ sort: this.typeAheadSort });
 	}
+
+	/** 
+	 * based on uFuzzy typeahead sort
+	 * @see https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295 
+	*/
+
+	typeAheadSort = (info: uFuzzy.Info, haystack: string[], needle: string) =>  {
+		let { idx, chars, terms, interLft2, interLft1, start, intraIns, interIns } = info;
+
+		const historySort = (ia: number, ib: number) => {
+			if (!this.plugin.settings.considerHistory) return 0;
+			const aHis = this.plugin.settings.history.includes(haystack[idx[ia]])
+			const bHis = this.plugin.settings.history.includes(haystack[idx[ib]])
+			if (ia < 2) return -1;
+			if (ib < 2) return 1;
+			//console.log(haystack[idx[ia]], ia, aHis, haystack[idx[ib]], ib, bHis);
+			if (aHis || bHis) console.log(haystack[idx[ia]], ia, aHis, haystack[idx[ib]], ib, bHis)
+			if (bHis && !aHis) { return 1; } else if (aHis && !bHis) { return -1; } else { return 0 }
+		}
+		const shortestSort = (ia: number, ib: number) => {
+			const val = haystack[idx[ia]].length - haystack[idx[ib]].length
+			console.log(ia, ib, val)
+			return val
+		}
+
+		const sorter = (ia: number, ib: number) => (
+			// most contig chars matched
+			chars[ib] - chars[ia] ||
+			// least char intra-fuzz (most contiguous)
+			intraIns[ia] - intraIns[ib] ||
+			// shortest match first
+			shortestSort(ia, ib) ||
+			// consider history
+			historySort(ia, ib) ||
+			// earliest start of match
+			// start[ia] - start[ib] ||
+			// most prefix bounds, boosted by full term matches
+			(
+				(terms[ib] + interLft2[ib] + 0.5 * interLft1[ib]) -
+				(terms[ia] + interLft2[ia] + 0.5 * interLft1[ia])
+			) ||
+			// highest density of match (least span)
+			//	span[ia] - span[ib] ||
+			// highest density of match (least term inter-fuzz)
+			interIns[ia] - interIns[ib] ||
+			// alphabetic
+			this.cmp(haystack[idx[ia]], haystack[idx[ib]])
+		)
+			
+		console.log(idx.map((v, i) => i))
+		return idx.map((v, i) => i).sort(sorter)
+	};
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
 		if (!this.plugin.settings.suggester) return null;
@@ -128,10 +181,10 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			}
 			suggestions.push(extGemoji)
 		}
-		if (this.plugin.settings.considerHistory) {
-			const [ first, ...rest ] = suggestions;
-			suggestions = [ first, ...rest.sort((a, b) => b.isInHistory && !a.isInHistory ? 1 : a.isInHistory && !b.isInHistory ? -1 :0) ];
-		}
+		// if (this.plugin.settings.considerHistory) {
+		// 	const [ first, ...rest ] = suggestions;
+		// 	suggestions = [ first, ...rest.sort((a, b) => b.isInHistory && !a.isInHistory ? 1 : a.isInHistory && !b.isInHistory ? -1 :0) ];
+		// }
 		return suggestions
 	}
 
