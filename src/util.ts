@@ -22,6 +22,11 @@ export function gemojiFromShortcode(shortcode: string, emojiList?: Gemoji[]) {
 	return match
 }
 
+export function slimHighlight(str: string, range: [number, number]) {
+	const [start, end] = range;
+	return `${str.slice(0, start)}<mark>${str.slice(start, end)}</mark>${str.slice(end)}`
+}
+
 const cmp = new Intl.Collator('en').compare;
 
 /** @see https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295 */

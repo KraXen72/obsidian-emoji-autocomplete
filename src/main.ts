@@ -4,8 +4,15 @@ import uFuzzy from '@leeoniya/ufuzzy';
 
 import EmojiMarkdownPostProcessor from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
-import { gemojiFromShortcode, typeAheadSort } from './util';
+import { typeAheadSort } from './util';
+
 // import DefinitionListPostProcessor from './definitionListPostProcessor';
+
+interface ExtGemoji extends Gemoji {
+	/** match range */
+	range: [number, number]
+	matchedName: string
+}
 
 export default class EmojiShortcodesPlugin extends Plugin {
 
@@ -45,6 +52,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 			emoji.names.forEach(n => {
 				shortcodeSet.add(n)
 				this.shortcodeIndexes[n] = i
+				if (n === 'large_blue_circle') this.shortcodeIndexes['blue_circle'] = i
 			})
 			// emoji.tags.forEach(t => this.tagIndexes[t] ??= i)
 		}
@@ -59,10 +67,11 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	}
 
 	updateHistory(suggestion: string) {
+		console.log("history: ", suggestion)
 		if (!this.settings.historyPriority) return;
 
 		const set = new Set([suggestion, ...this.settings.history]);
-		const history = [...set].slice(0, this.settings.historyLimit);
+		const history = Array.from(set).slice(0, this.settings.historyLimit);
 
 		this.settings = Object.assign(this.settings, { history });
 		this.saveSettings();
@@ -73,17 +82,19 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	plugin: EmojiShortcodesPlugin;
 	fuzzy: uFuzzy;
 	resultLimit = 18;
+	// queryRegex = new RegExp(/:[^:\s\p{Emoji}]+:?$/);
+	queryRegex = new RegExp(/:\S.+$/);
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
 		this.plugin = plugin;
-		this.fuzzy = new uFuzzy({ sort: typeAheadSort,  });
+		this.fuzzy = new uFuzzy({ sort: typeAheadSort });
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
 		if (!this.plugin.settings.suggester) return null;
 		const sub = editor.getLine(cursor.line).substring(0, cursor.ch);
-		const match = sub.match(/:\S.+$/)?.first();
+		const match = sub.match(this.queryRegex)?.first();
 		console.log(match)
 		if (!match) return null;
 		return {
@@ -98,32 +109,38 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 
 	getSuggestions(context: EditorSuggestContext): Gemoji[] {
 		let emoji_query = context.query.replace(':', '')
-		console.time("search")
 		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, emoji_query);
-		const suggestions = []
-		console.log("q:", emoji_query)
+		const suggestions: ExtGemoji[] = []
 		// using info.idx here instead of idxs because uf.info() may have
 		// further reduced the initial idxs based on prefix/suffix rules
-		for (let i = 0; i < Math.min(this.resultLimit, (order?.length || 0)); i++) {
-			const idxs2 = info.idx || idxs;
-			const sc = this.plugin.shortcodeList[idxs2[order[i]]]
+		const idxs2 = info?.idx ?? idxs;
+		for (let i = 0; i <  Math.min((order?.length || 0), this.resultLimit); i++) {
+			const index = idxs2[order[i]]
+			const sc = this.plugin.shortcodeList[index]
 			const gemoji = this.plugin.indexedGemojiFromShortcode(sc)
-			if (gemoji) suggestions.push(gemoji)
+			if (!gemoji) continue;
+			const extGemoji: ExtGemoji = {
+				...gemoji, 
+				range: info.ranges[index] as [number, number],
+				matchedName: sc
+			}
+			suggestions.push(extGemoji)
 		}
-		console.timeEnd("search")
+		console.log("q:", emoji_query, suggestions, order?.length || 0, idxs2.length, "info", info)
 		return suggestions
 		//this.plugin.emojiList.filter(e => e.names.some(n => n.includes(emoji_query)));
 	}
 
-	renderSuggestion(suggestion: Gemoji, el: HTMLElement) {
+	renderSuggestion(suggestion: ExtGemoji, el: HTMLElement) {
 		const outer = el.createDiv({ cls: "ES-suggester-container" });
-		outer.createDiv({ cls: "ES-shortcode" }).setText(suggestion.names[0].replace(/:/g, ""));
+		outer.createDiv({ cls: "ES-shortcode" }).setText(suggestion.matchedName/*.replace(/:/g, "")*/);
 		outer.createDiv({ cls: "ES-emoji" }).setText(suggestion.emoji);
 	}
 
-	selectSuggestion(suggestion: Gemoji): void {
+	selectSuggestion(suggestion: ExtGemoji): void {
 		if(!this.context) return;
-		const { start, end } = this.context;
-		(this.context.editor as Editor).replaceRange(this.plugin.settings.immediateReplace ? suggestion.emoji : `${suggestion} `, start, end);
+		const { start, end, query } = this.context;
+		const repl = this.plugin.settings.immediateReplace ? suggestion.emoji : `${suggestion.matchedName} `;
+		(this.context.editor as Editor).replaceRange(repl, start, end);
 	}
 }
