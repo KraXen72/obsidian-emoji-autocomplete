@@ -23,7 +23,7 @@
   
 - `:joy:` will become 😂
 - `:heart:` will become :heart:
-- 
+  
 ## How to install (for now)
 
 Currently, the plugin is not published on the Obsidian Plugin Store yet.
