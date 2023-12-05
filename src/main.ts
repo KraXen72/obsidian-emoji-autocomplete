@@ -39,7 +39,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		this.updateEmojiList()
 	}
 
-	async saveSettings(update = false) {
+	async saveSettings(update = true) {
 		await this.saveData(this.settings);
 		if (update) this.updateEmojiList()
 	}
@@ -75,7 +75,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 			}
 			if (!this.settings.tagSearch) continue;
 			for (const t of emoji.tags) { 
-				if (typeof this.shortcodeIndexes[t] === 'undefined') {
+				if (typeof this.shortcodeIndexes[t] === 'undefined' && supported) {
 					shortcodeSet.add(t)
 					this.shortcodeIndexes[t] ??= i 
 				}
@@ -214,7 +214,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		} else {
 			shortcodeDiv.setText(suggestion.matchedName);
 		}
-		if (suggestion.isInHistory) shortcodeDiv.createDiv().outerHTML = iconHistory;
+		if (suggestion.isInHistory && this.plugin.settings.considerHistory) shortcodeDiv.createDiv().outerHTML = iconHistory;
 		if (suggestion.matchedBy === 'tag') {
 			if (this.plugin.settings.tagShowShortcode) {
 				shortcodeDiv.createDiv({ cls: 'ES-tag-shortcode' }).innerHTML = `${iconChevronsRight} <span class="ES-tag-sc">${suggestion.names[0]}</span>`

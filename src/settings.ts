@@ -154,7 +154,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 				cb.setButtonText("Clear & Re-check")
 					.onClick(async () => {
 						this.plugin.settings.emojiSupported = {};
-						await this.plugin.saveSettings();
+						await this.plugin.saveSettings(true);
 					})
 			});
 		
