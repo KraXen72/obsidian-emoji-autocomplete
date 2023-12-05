@@ -17,7 +17,10 @@ export default class EmojiMarkdownPostProcessor {
 		if (el.hasChildNodes()){
 			el.childNodes.forEach((child: ChildNode) => this.emojiReplace(shortcode, child as HTMLElement));
 		} else {
-			el.textContent = el.textContent.replace(shortcode, gemojiFromShortcode(shortcode).emoji);
+			if (!el.textContent.includes(shortcode)) return false;
+			const sc = shortcode.replace(/^:/, '').replace(/:$/, '')
+			
+			el.textContent = el.textContent.replace(shortcode, gemojiFromShortcode(sc).emoji);
 		}
 	}
 }

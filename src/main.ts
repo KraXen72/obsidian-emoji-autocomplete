@@ -228,7 +228,8 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	selectSuggestion(suggestion: ExtGemoji): void {
 		if(!this.context) return;
 		const { start, end } = this.context;
-		const repl = this.plugin.settings.immediateReplace ? suggestion.emoji : `:${suggestion.matchedName}: `;
+		const shortcode = suggestion.names.includes(suggestion.matchedName) ? suggestion.matchedName : suggestion.names[0]
+		const repl = this.plugin.settings.immediateReplace ? suggestion.emoji : `:${shortcode}: `;
 
 		this.context.editor.replaceRange(repl, start, end);
 		this.plugin.updateHistory(suggestion.matchedName);
