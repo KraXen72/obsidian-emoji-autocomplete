@@ -1,13 +1,14 @@
-import { Plugin, EditorSuggest, Editor, EditorPosition, TFile, EditorSuggestTriggerInfo, EditorSuggestContext } from 'obsidian';
+import { Plugin, EditorSuggest, Editor, EditorPosition, TFile, EditorSuggestTriggerInfo, EditorSuggestContext, Notice } from 'obsidian';
 import { gemoji, type Gemoji } from 'gemoji'
 import uFuzzy from '@leeoniya/ufuzzy';
 
 import EmojiMarkdownPostProcessor from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
-import { iconHistory, slimHighlight } from './util';
+import { iconHistory, slimHighlight, isEmojiSupported } from './util';
+
+const windowsSupportedEmoji = ['relaxed']
 
 // import DefinitionListPostProcessor from './definitionListPostProcessor';
-
 interface ExtGemoji extends Gemoji {
 	/** match range */
 	range: [number, number]
@@ -43,21 +44,40 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	}
 
 	updateEmojiList() {
-		// const set = new Set(this.settings.history)
-		// this.emojiList = [...this.settings.history, ...Object.keys(emoji).filter(e => !set.has(e))];
-
+		// console.time('emojiUpdate');
 		(this.emojiList as Gemoji[]) = gemoji
 		const shortcodeSet: Set<string> = new Set()
+		const showNotice = Object.keys(this.settings.emojiSupported).length === 0
+
 		for (let i = 0; i < gemoji.length; i++) {
 			const emoji = gemoji[i]
-			emoji.names.forEach(n => {
+			let supported = true
+			if (emoji.names.includes('large_blue_circle')) emoji.names.push('blue_circle')
+
+			for (const n of emoji.names) {
+				if (!(n in this.settings.emojiSupported)) {
+					if (emoji.category === 'Flags' && emoji.description.startsWith('flag:')
+					|| (navigator.userAgent.includes('Win') && windowsSupportedEmoji.includes(n))) {
+						this.settings.emojiSupported[n] = true
+					} else {
+						supported = isEmojiSupported(emoji.emoji)
+						this.settings.emojiSupported[n] = supported
+					}
+				} else if (this.settings.hideUnsupported) {
+					supported = this.settings.emojiSupported[n];
+				}
+
+				if (!supported) continue;
 				shortcodeSet.add(n)
 				this.shortcodeIndexes[n] = i
-				if (n === 'large_blue_circle') this.shortcodeIndexes['blue_circle'] = i
-			})
+			}
 			// emoji.tags.forEach(t => this.tagIndexes[t] ??= i)
 		}
 		this.shortcodeList = Array.from(shortcodeSet)
+		// console.timeEnd('emojiUpdate')
+		this.saveData(this.settings);
+		if (showNotice) new Notice(`Re-checked emoji`)
+		console.log(`Updated emoji list: ${this.shortcodeList.length} items`)
 	}
 
 	indexedGemojiFromShortcode(shortcode: string) {
@@ -83,7 +103,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	fuzzy: uFuzzy;
 	cmp = new Intl.Collator('en').compare;
 	resultLimit = 18;
-	queryRegex = new RegExp(/:[^\s:]+$/);
+	queryRegex = new RegExp(/:[^\s:][^:]*$/);
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
@@ -105,8 +125,6 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			const bHis = this.plugin.settings.history.includes(haystack[idx[ib]])
 			if (ia < 2) return -1;
 			if (ib < 2) return 1;
-			//console.log(haystack[idx[ia]], ia, aHis, haystack[idx[ib]], ib, bHis);
-			// if (aHis || bHis) console.log(haystack[idx[ia]], ia, aHis, haystack[idx[ib]], ib, bHis)
 			if (bHis && !aHis) { return 1; } else if (aHis && !bHis) { return -1; } else { return 0 }
 		}
 		const shortestSort = (ia: number, ib: number) => haystack[idx[ia]].length - haystack[idx[ib]].length
@@ -141,9 +159,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
 		if (!this.plugin.settings.suggester) return null;
 		const sub = editor.getLine(cursor.line).slice(0, cursor.ch);
-		// const match = sub.match(/:\S+$/)?.first();
 		const match = sub.match(this.queryRegex)?.first();
-		// console.log(sub, match, match)
 		if (!match) return null;
 		return {
 			end: cursor,
@@ -161,7 +177,6 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		let suggestions: ExtGemoji[] = []
 		// using info.idx here instead of idxs because uf.info() may have
 		// further reduced the initial idxs based on prefix/suffix rules	
-		console.log("gs", emoji_query)
 		const idxs2 = info?.idx ?? idxs;
 		for (let i = 0; i <  Math.min((order?.length || 0), this.resultLimit); i++) {
 			const index = idxs2[order[i]]

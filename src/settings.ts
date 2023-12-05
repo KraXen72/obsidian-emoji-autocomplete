@@ -8,6 +8,8 @@ export interface EmojiPluginSettings {
 	historyLimit: number;
 	history: string[];
 	highlightMatches: boolean;
+	emojiSupported: Record<string, boolean>;
+	hideUnsupported: boolean
 }
 
 export const DEFAULT_SETTINGS: EmojiPluginSettings = {
@@ -17,6 +19,8 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	historyLimit: 25,
 	history: [],
 	highlightMatches: true,
+	emojiSupported: {},
+	hideUnsupported: true
 }
 
 export class EmojiPluginSettingTab extends PluginSettingTab {
@@ -97,6 +101,29 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 				});
 		}
 
+		new Setting(containerEl)
+			.setName('Hide unsupported emoji')
+			.setDesc('Unsupported emoji will not be suggested in the picker')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.hideUnsupported)
+					.onChange(async value => {
+						this.plugin.settings.hideUnsupported = value;
+						await this.plugin.saveSettings();
+					})
+			});
+
+		new Setting(containerEl)
+			.setName('Re-check emoji support')
+			.setDesc('This will clear the supported/unsupported status of all emoji and re-check them.')
+			.setClass('ES-sub-setting')
+			.addButton(cb => {
+				cb.setButtonText("Clear & Re-check")
+					.onClick(async () => {
+						this.plugin.settings.emojiSupported = {};
+						await this.plugin.saveSettings();
+					})
+			});
+		
 		containerEl.createEl('h2', { text: 'Other' });
 
 		new Setting(containerEl)
