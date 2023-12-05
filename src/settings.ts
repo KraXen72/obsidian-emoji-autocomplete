@@ -1,4 +1,4 @@
-import { PluginSettingTab, App, Setting } from "obsidian";
+import { PluginSettingTab, App, Setting, Notice } from "obsidian";
 import EmojiShortcodesPlugin from "./main";
 
 export interface EmojiPluginSettings {
@@ -9,7 +9,9 @@ export interface EmojiPluginSettings {
 	history: string[];
 	highlightMatches: boolean;
 	emojiSupported: Record<string, boolean>;
-	hideUnsupported: boolean
+	hideUnsupported: boolean;
+	tagSearch: boolean;
+	tagShowShortcode: boolean;
 }
 
 export const DEFAULT_SETTINGS: EmojiPluginSettings = {
@@ -20,7 +22,9 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	history: [],
 	highlightMatches: true,
 	emojiSupported: {},
-	hideUnsupported: true
+	hideUnsupported: true,
+	tagSearch: true,
+	tagShowShortcode: false,
 }
 
 export class EmojiPluginSettingTab extends PluginSettingTab {
@@ -60,10 +64,37 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			});
+		
+		new Setting(containerEl)
+			.setName('Suggest by Tags')
+			.setDesc('Also suggest emoji by their tags. Example: 🔀 (twisted_rightwards_arrow) has tags [\'shuffle\']')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.tagSearch)
+					.onChange(async value => {
+						this.plugin.settings.tagSearch = value;
+						await this.plugin.saveSettings();
+						this.display();
+					})
+			});
+
+		if (this.plugin.settings.tagSearch) {
+			new Setting(containerEl)
+				.setName('Show shortcode on tag results')
+				.setDesc('When an emoji is matched by it\'s tag, show the shortcode next to it. When disabled, looks cleaner, but you won\'t learn the proper shortcodes.')
+				.setClass('ES-sub-setting')
+				.addToggle(cb => {
+					cb.setValue(this.plugin.settings.tagShowShortcode)
+						.onChange(async value => {
+							this.plugin.settings.tagShowShortcode = value;
+							await this.plugin.saveSettings();
+						})
+				});
+		}
+	
 
 		new Setting(containerEl)
 			.setName('Suggest recenly used emoji')
-			.setDesc('Suggester will boost recently used emoji.\nEXPERIMENTAL: plesae open an issue/pull request on github if this behaves unpredictably')
+			.setDesc('Suggester will boost recently used emoji. EXPERIMENTAL: please open an issue/pull request on github if this behaves unpredictably')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.considerHistory)
 					.onChange(async value => {
@@ -97,9 +128,12 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 						.onClick(async () => {
 							this.plugin.settings.history = [];
 							await this.plugin.saveSettings();
+							new Notice(`Cleared history`)
 						})
 				});
 		}
+
+		containerEl.createEl('h2', { text: 'Supported emoji' });
 
 		new Setting(containerEl)
 			.setName('Hide unsupported emoji')

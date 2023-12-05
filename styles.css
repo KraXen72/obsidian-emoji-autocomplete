@@ -6,7 +6,8 @@
   max-width: 100vw;
 }
 
-.ES-shortcode {
+.ES-shortcode,
+.ES-tag-shortcode {
   margin-right: 8px;
   display: flex;
   align-items: center;
@@ -15,6 +16,13 @@
 .ES-shortcode svg {
 	opacity: 0.6;
 	margin-left: 0.25rem;
+}
+.ES-tag-sc {
+	background: var(--code-background);
+	padding: 0rem .25rem;
+	border-radius: 3px;
+	font-family: var(--font-monospace);
+	font-size: .875rem;
 }
 
 .ES-shortcode span.ES-hl {

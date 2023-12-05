@@ -4,9 +4,9 @@ import uFuzzy from '@leeoniya/ufuzzy';
 
 import EmojiMarkdownPostProcessor from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
-import { iconHistory, slimHighlight, isEmojiSupported } from './util';
+import { iconHistory, iconChevronsRight, slimHighlight, isEmojiSupported } from './util';
 
-const windowsSupportedEmoji = ['relaxed']
+const windowsSupportedEmoji = ['relaxed', 'tm', 'registered']
 
 // import DefinitionListPostProcessor from './definitionListPostProcessor';
 interface ExtGemoji extends Gemoji {
@@ -14,6 +14,7 @@ interface ExtGemoji extends Gemoji {
 	range: [number, number]
 	matchedName: string,
 	isInHistory: boolean,
+	matchedBy: 'name' | 'tag' | 'mystery'
 }
 
 export default class EmojiShortcodesPlugin extends Plugin {
@@ -48,6 +49,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		(this.emojiList as Gemoji[]) = gemoji
 		const shortcodeSet: Set<string> = new Set()
 		const showNotice = Object.keys(this.settings.emojiSupported).length === 0
+		this.shortcodeIndexes = {}
 
 		for (let i = 0; i < gemoji.length; i++) {
 			const emoji = gemoji[i]
@@ -71,7 +73,13 @@ export default class EmojiShortcodesPlugin extends Plugin {
 				shortcodeSet.add(n)
 				this.shortcodeIndexes[n] = i
 			}
-			// emoji.tags.forEach(t => this.tagIndexes[t] ??= i)
+			if (!this.settings.tagSearch) continue;
+			for (const t of emoji.tags) { 
+				if (typeof this.shortcodeIndexes[t] === 'undefined') {
+					shortcodeSet.add(t)
+					this.shortcodeIndexes[t] ??= i 
+				}
+			}
 		}
 		this.shortcodeList = Array.from(shortcodeSet)
 		// console.timeEnd('emojiUpdate')
@@ -188,7 +196,10 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 				range: info.ranges[order[i]] as [number, number],
 				matchedName: sc,
 				isInHistory: this.plugin.settings.history.includes(sc),
+				matchedBy: 'mystery'
 			}
+			if (gemoji.tags.includes(sc)) extGemoji.matchedBy = 'tag'
+			if (gemoji.names.includes(sc)) extGemoji.matchedBy = 'name'
 			suggestions.push(extGemoji)
 		}
 		// if (this.plugin.settings.considerHistory) {
@@ -207,6 +218,9 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			shortcodeDiv.setText(suggestion.matchedName);
 		}
 		if (suggestion.isInHistory) shortcodeDiv.createDiv().outerHTML = iconHistory;
+		if (this.plugin.settings.tagShowShortcode && suggestion.matchedBy === 'tag') {
+			shortcodeDiv.createDiv({ cls: 'ES-tag-shortcode' }).innerHTML = `${iconChevronsRight} <span class="ES-tag-sc">${suggestion.names[0]}</span>`
+		}
 		outer.createDiv({ cls: "ES-emoji" }).setText(suggestion.emoji);
 	}
 
