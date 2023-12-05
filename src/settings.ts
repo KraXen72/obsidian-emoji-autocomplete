@@ -7,6 +7,7 @@ export interface EmojiPluginSettings {
 	historyPriority: boolean;
 	historyLimit: number;
 	history: string[];
+	highlightMatches: boolean;
 }
 
 export const DEFAULT_SETTINGS: EmojiPluginSettings = {
@@ -15,6 +16,7 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	historyPriority: true,
 	historyLimit: 100,
 	history: [],
+	highlightMatches: true,
 }
 
 export class EmojiPluginSettingTab extends PluginSettingTab {
@@ -30,19 +32,8 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', { text: 'Emoji Shortcodes Plugin' });
-
-		new Setting(containerEl)
-			.setName('Immediate Emoji Replace')
-			.setDesc('If this is turned on, Emoji shortcodes will be immediately replaced after typing. Otherwise they are still stored as a shortcode and you only see the Emoji in Preview Mode.')
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.immediateReplace)
-					.onChange(async value => {
-						this.plugin.settings.immediateReplace = value;
-						await this.plugin.saveSettings();
-					})
-			});
-
+		containerEl.createEl('h2', { text: 'Emoji Autocomplete Plugin' });
+		containerEl.createEl('h2', { text: 'Suggestions' });
 
 		new Setting(containerEl)
 			.setName('Emoji Suggester')
@@ -56,8 +47,19 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Use History Priority')
-			.setDesc('Suggester gives priority to recently used emoji.')
+			.setName('Highlight matched part of suggestion')
+			.setDesc('If this is on, the part of the suggestion that is matched will be highlighted in accent color.')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.highlightMatches)
+					.onChange(async value => {
+						this.plugin.settings.highlightMatches = value;
+						await this.plugin.saveSettings();
+					})
+			});
+
+		new Setting(containerEl)
+			.setName('Suggest recenly used emoji')
+			.setDesc('Suggester will include recently used emoji.')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.historyPriority)
 					.onChange(async value => {
@@ -92,11 +94,41 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 				});
 		}
 
+		containerEl.createEl('h2', { text: 'Other' });
+
 		new Setting(containerEl)
-			.setName('Donate')
-			.setDesc('If you like this Plugin, consider donating to support continued development:')
-			.addButton((bt) => {
-				bt.buttonEl.outerHTML = `<a href="https://ko-fi.com/phibr0"><img src="https://uploads-ssl.webflow.com/5c14e387dab576fe667689cf/61e11e22d8ff4a5b4a1b3346_Supportbutton-1.png"></a>`;
+			.setName('Immediate Emoji Replace')
+			.setDesc('If this is turned on, Emoji shortcodes will be immediately replaced after typing. Otherwise they are still stored as a shortcode and you only see the Emoji in Preview Mode.')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.immediateReplace)
+					.onChange(async value => {
+						this.plugin.settings.immediateReplace = value;
+						await this.plugin.saveSettings();
+					})
 			});
+
+		containerEl.createEl('h2', { text: 'Donate' });
+
+		const donateFragment = new DocumentFragment()
+		donateFragment.createDiv({ text: 'If you like this Plugin, consider donating to support continued development', cls: "setting-item-description" })
+		const gridHolder = donateFragment.createDiv({ cls: "ES-setting-gridholder" })
+
+		const author1 = gridHolder.createDiv()
+		author1.createDiv({ text: 'Support KraXen72', cls: 'setting-item-name' })
+		author1.createDiv({ text: 'Creator of Emoji Autocomplete and all the features on top of Emoji Shortcodes', cls: 'setting-item-description' })
+		gridHolder.createDiv({ cls: 'ES-donate' }).innerHTML = `
+			<a href="https://liberapay.com/KraXen72" title="Support KraXen72 on LiberaPay"><img src="https://liberapay.com/assets/widgets/donate.svg" height=32></a>
+			<a href="https://ko-fi.com/kraxen72" title="Support KraXen72 on ko-fi"><img src="https://ko-fi.com/img/githubbutton_sm.svg" height=32></a>
+		`;
+
+		const author2 = gridHolder.createDiv()
+		author2.createDiv({ text: 'Support phibr0', cls: 'setting-item-name' })
+		author2.createDiv({ text: 'Creator of Emoji Shortcodes, the plugin Emoji Autocomplete was initially based on', cls: 'setting-item-description' })
+		gridHolder.createDiv({ cls: 'ES-donate' }).innerHTML = `
+			<a href="https://ko-fi.com/phibr0" title="Support phibr0 on ko-fi"><img src="https://ko-fi.com/img/githubbutton_sm.svg" height=32></a>
+		`;
+
+		containerEl.appendChild(donateFragment)
+		
 	}
 }

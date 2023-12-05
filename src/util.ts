@@ -24,7 +24,7 @@ export function gemojiFromShortcode(shortcode: string, emojiList?: Gemoji[]) {
 
 export function slimHighlight(str: string, range: [number, number]) {
 	const [start, end] = range;
-	return `${str.slice(0, start)}<mark>${str.slice(start, end)}</mark>${str.slice(end)}`
+	return `${str.slice(0, start)}<span class="ES-hl">${str.slice(start, end)}</span>${str.slice(end)}`
 }
 
 const cmp = new Intl.Collator('en').compare;

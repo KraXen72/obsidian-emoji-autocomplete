@@ -4,7 +4,7 @@ import uFuzzy from '@leeoniya/ufuzzy';
 
 import EmojiMarkdownPostProcessor from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
-import { typeAheadSort } from './util';
+import { slimHighlight, typeAheadSort } from './util';
 
 // import DefinitionListPostProcessor from './definitionListPostProcessor';
 
@@ -121,19 +121,25 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			if (!gemoji) continue;
 			const extGemoji: ExtGemoji = {
 				...gemoji, 
-				range: info.ranges[index] as [number, number],
+				range: info.ranges[order[i]] as [number, number],
 				matchedName: sc
 			}
 			suggestions.push(extGemoji)
+			// console.log(sc, info, index, idxs2)
 		}
-		console.log("q:", emoji_query, suggestions, order?.length || 0, idxs2.length, "info", info)
+		// console.log("q:", emoji_query, suggestions, order?.length || 0, idxs2.length, "info", info)
 		return suggestions
 		//this.plugin.emojiList.filter(e => e.names.some(n => n.includes(emoji_query)));
 	}
 
 	renderSuggestion(suggestion: ExtGemoji, el: HTMLElement) {
 		const outer = el.createDiv({ cls: "ES-suggester-container" });
-		outer.createDiv({ cls: "ES-shortcode" }).setText(suggestion.matchedName/*.replace(/:/g, "")*/);
+		const shortcodeDiv = outer.createDiv({ cls: "ES-shortcode" })
+		if (this.plugin.settings.highlightMatches) {
+			shortcodeDiv.innerHTML = slimHighlight(suggestion.matchedName, suggestion.range)
+		} else {
+			shortcodeDiv.setText(suggestion.matchedName);
+		}
 		outer.createDiv({ cls: "ES-emoji" }).setText(suggestion.emoji);
 	}
 

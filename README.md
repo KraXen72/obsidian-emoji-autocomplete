@@ -9,7 +9,7 @@
 - use the [uFuzzy](https://github.com/leeoniya/uFuzzy) library for better fuzzy serach suggestions
   - allow some fuzzyness when searching
   - more relevant and smart results
-- force symbol/emoji glyphs to render as emoji in the suggestions.
+- highlight matched part of emoji (optional)
 
 This is a fork of the [Emoji Shortcodes](https://github.com/phibr0/obsidian-emoji-shortcodes) plugin.  
 This Plugin adds Support for Emoji Shortcodes in Obsidian. You can find Emoji Shortcodes [here](https://emojipedia.org/).
