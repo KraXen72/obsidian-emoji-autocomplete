@@ -10,12 +10,15 @@
   - more relevant and smart results
 - highlight matched part of emoji (optional)
 - better emoji history
+  - nice 'recent' icon     
   - doesen't overwrite most relevant result
-  - nice icon
-
-**Example**
-<img width="550" src="https://user-images.githubusercontent.com/59741989/129605183-1295bfbb-760d-4b45-bf94-452f38f2b54c.gif">  
-
+- supports searching by emoji tags:
+    - 🔀 (twisted_rightwards_arrow) has tags [\'shuffle\']
+  
+**Example**  
+  
+<img height="300"  src="https://github.com/KraXen72/obsidian-emoji-autocomplete/assets/21956756/7408384f-2f5e-4edb-8db3-fcfdc685e139"> <img width="500" align="right" src="https://user-images.githubusercontent.com/59741989/129605183-1295bfbb-760d-4b45-bf94-452f38f2b54c.gif">
+  
 - `:joy:` will become 😂
 - `:heart:` will become :heart:
 
