@@ -183,7 +183,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		let emoji_query = context.query.replace(':', '')
 		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, emoji_query);
 		let suggestions: ExtGemoji[] = []
-		
+
 		// using info.idx here instead of idxs because uf.info() may have
 		// further reduced the initial idxs based on prefix/suffix rules	
 		const idxs2 = info?.idx ?? idxs;
