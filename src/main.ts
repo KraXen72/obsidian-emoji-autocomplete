@@ -39,9 +39,9 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		this.updateEmojiList()
 	}
 
-	async saveSettings() {
+	async saveSettings(update = false) {
 		await this.saveData(this.settings);
-		this.updateEmojiList()
+		if (update) this.updateEmojiList()
 	}
 
 	updateEmojiList() {
@@ -102,7 +102,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		const history = Array.from(set).slice(0, this.settings.historyLimit);
 
 		this.settings = Object.assign(this.settings, { history });
-		this.saveSettings();
+		this.saveSettings(false);
 	}
 }
 

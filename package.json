@@ -4,19 +4,17 @@
   "description": "This plugin suggests emoji when you type a shortcode :smile:",
   "main": "main.js",
   "scripts": {
-    "dev": "esbuild src/main.ts --bundle --external:obsidian --format=cjs --outfile=main.js --minify --watch",
-    "build": "rollup --config rollup.config.js --environment BUILD:production"
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^25.0.7",
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "@rollup/plugin-typescript": "^11.1.5",
     "@types/node": "^20.10.3",
-    "obsidian": "^1.4.11",
-    "rollup": "^4.6.1",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.19.8",
+    "obsidian": "latest",
     "tslib": "^2.6.2",
     "typescript": "5.3.2"
   },
