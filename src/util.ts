@@ -29,7 +29,10 @@ export function slimHighlight(str: string, range: [number, number]) {
 
 const cmp = new Intl.Collator('en').compare;
 
-/** @see https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295 */
+/** 
+ * modified uFuzzy typeahead sort
+ * @see https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295 
+*/
 export function typeAheadSort(info: uFuzzy.Info, haystack: string[], needle: string)  {
 	let { idx, chars, terms, interLft2, interLft1, start, intraIns, interIns } = info;
 
@@ -55,3 +58,5 @@ export function typeAheadSort(info: uFuzzy.Info, haystack: string[], needle: str
 		cmp(haystack[idx[ia]], haystack[idx[ib]])
 	))
 };
+
+export const iconHistory = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9a9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5m4-1v5l4 2"/></g></svg>`

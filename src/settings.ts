@@ -4,7 +4,7 @@ import EmojiShortcodesPlugin from "./main";
 export interface EmojiPluginSettings {
 	immediateReplace: boolean;
 	suggester: boolean;
-	historyPriority: boolean;
+	considerHistory: boolean;
 	historyLimit: number;
 	history: string[];
 	highlightMatches: boolean;
@@ -13,8 +13,8 @@ export interface EmojiPluginSettings {
 export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	immediateReplace: true,
 	suggester: true,
-	historyPriority: true,
-	historyLimit: 100,
+	considerHistory: true,
+	historyLimit: 25,
 	history: [],
 	highlightMatches: true,
 }
@@ -61,24 +61,27 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 			.setName('Suggest recenly used emoji')
 			.setDesc('Suggester will include recently used emoji.')
 			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.historyPriority)
+				cb.setValue(this.plugin.settings.considerHistory)
 					.onChange(async value => {
-						this.plugin.settings.historyPriority = value;
+						this.plugin.settings.considerHistory = value;
 						await this.plugin.saveSettings();
 						this.display();
 					})
 			});
 
-		if (this.plugin.settings.historyPriority) {
+		if (this.plugin.settings.considerHistory) {
 			new Setting(containerEl)
 				.setName('History Limit')
 				.setClass('ES-sub-setting')
 				.addText(cb => {
-					cb.setPlaceholder(String(DEFAULT_SETTINGS.historyLimit))
+					cb.setPlaceholder(`default: ${DEFAULT_SETTINGS.historyLimit}, max: 100`)
 						.setValue(String(this.plugin.settings.historyLimit))
 						.onChange(async value => {
-							this.plugin.settings.historyLimit = value !== '' ? Number(value) : DEFAULT_SETTINGS.historyLimit;
+							let val = value !== '' ? Number(value) : DEFAULT_SETTINGS.historyLimit;
+							if (val > 100) val = 100;
+							this.plugin.settings.historyLimit = val;
 							await this.plugin.saveSettings();
+							// cb.setValue(val.toString())
 						})
 				});
 
