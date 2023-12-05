@@ -68,7 +68,6 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	}
 
 	updateHistory(matchedShortcode: string) {
-		console.log('history', matchedShortcode, this.settings.history)
 		if (!this.settings.considerHistory) return;
 
 		const set = new Set([matchedShortcode, ...this.settings.history]);
@@ -84,13 +83,12 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	fuzzy: uFuzzy;
 	cmp = new Intl.Collator('en').compare;
 	resultLimit = 18;
-	// queryRegex = new RegExp(/:[^:\s\p{Emoji}]+:?$/);
-	queryRegex = new RegExp(/:\S.+$/);
+	queryRegex = new RegExp(/:[^\s:]+$/);
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
 		this.plugin = plugin;
-		this.fuzzy = new uFuzzy({ sort: this.typeAheadSort });
+		this.fuzzy = new uFuzzy({ sort: this.typeAheadSort, interChars: '.' });
 	}
 
 	/** 
@@ -108,14 +106,10 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			if (ia < 2) return -1;
 			if (ib < 2) return 1;
 			//console.log(haystack[idx[ia]], ia, aHis, haystack[idx[ib]], ib, bHis);
-			if (aHis || bHis) console.log(haystack[idx[ia]], ia, aHis, haystack[idx[ib]], ib, bHis)
+			// if (aHis || bHis) console.log(haystack[idx[ia]], ia, aHis, haystack[idx[ib]], ib, bHis)
 			if (bHis && !aHis) { return 1; } else if (aHis && !bHis) { return -1; } else { return 0 }
 		}
-		const shortestSort = (ia: number, ib: number) => {
-			const val = haystack[idx[ia]].length - haystack[idx[ib]].length
-			console.log(ia, ib, val)
-			return val
-		}
+		const shortestSort = (ia: number, ib: number) => haystack[idx[ia]].length - haystack[idx[ib]].length
 
 		const sorter = (ia: number, ib: number) => (
 			// most contig chars matched
@@ -141,15 +135,15 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			this.cmp(haystack[idx[ia]], haystack[idx[ib]])
 		)
 			
-		console.log(idx.map((v, i) => i))
 		return idx.map((v, i) => i).sort(sorter)
 	};
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
 		if (!this.plugin.settings.suggester) return null;
-		const sub = editor.getLine(cursor.line).substring(0, cursor.ch);
+		const sub = editor.getLine(cursor.line).slice(0, cursor.ch);
+		// const match = sub.match(/:\S+$/)?.first();
 		const match = sub.match(this.queryRegex)?.first();
-		console.log(match)
+		// console.log(sub, match, match)
 		if (!match) return null;
 		return {
 			end: cursor,
@@ -166,7 +160,8 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, emoji_query);
 		let suggestions: ExtGemoji[] = []
 		// using info.idx here instead of idxs because uf.info() may have
-		// further reduced the initial idxs based on prefix/suffix rules
+		// further reduced the initial idxs based on prefix/suffix rules	
+		console.log("gs", emoji_query)
 		const idxs2 = info?.idx ?? idxs;
 		for (let i = 0; i <  Math.min((order?.length || 0), this.resultLimit); i++) {
 			const index = idxs2[order[i]]
@@ -203,7 +198,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	selectSuggestion(suggestion: ExtGemoji): void {
 		if(!this.context) return;
 		const { start, end } = this.context;
-		const repl = this.plugin.settings.immediateReplace ? suggestion.emoji : `${suggestion.matchedName} `;
+		const repl = this.plugin.settings.immediateReplace ? suggestion.emoji : `:${suggestion.matchedName}: `;
 
 		this.context.editor.replaceRange(repl, start, end);
 		this.plugin.updateHistory(suggestion.matchedName);

@@ -59,7 +59,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Suggest recenly used emoji')
-			.setDesc('Suggester will include recently used emoji.')
+			.setDesc('Suggester will boost recently used emoji.\nEXPERIMENTAL: plesae open an issue/pull request on github if this behaves unpredictably')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.considerHistory)
 					.onChange(async value => {
