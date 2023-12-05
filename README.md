@@ -1,20 +1,17 @@
 # Obsidian Emoji Autocomplete 
 <!-- ![GitHub all releases](https://img.shields.io/github/downloads/phibr0/obsidian-emoji-shortcodes/total) -->
-> Easily insert emoji by their shortcodes
-  
-<img width="550" src="https://user-images.githubusercontent.com/59741989/129605183-1295bfbb-760d-4b45-bf94-452f38f2b54c.gif">  
+> Easily insert emoji by their [shortcodes](https://emojibase.dev/shortcodes/)
     
 ## Features
-- use the [gemoji](https://github.com/wooorm/gemoji) library instead of maintaining own list of emoji
-- use the [uFuzzy](https://github.com/leeoniya/uFuzzy) library for better fuzzy serach suggestions
+- Get autocomplete/typeahead suggestions for emoji
+- uses the [gemoji](https://github.com/wooorm/gemoji) library to get an up-to-date list of emoji
+- uses the [uFuzzy](https://github.com/leeoniya/uFuzzy) library for better fuzzy search suggestions
   - allow some fuzzyness when searching
   - more relevant and smart results
 - highlight matched part of emoji (optional)
 
-This is a fork of the [Emoji Shortcodes](https://github.com/phibr0/obsidian-emoji-shortcodes) plugin.  
-This Plugin adds Support for Emoji Shortcodes in Obsidian. You can find Emoji Shortcodes [here](https://emojipedia.org/).
-
 **Example**
+<img width="550" src="https://user-images.githubusercontent.com/59741989/129605183-1295bfbb-760d-4b45-bf94-452f38f2b54c.gif">  
 
 - `:joy:` will become 😂
 - `:heart:` will become :heart:
@@ -22,13 +19,19 @@ This Plugin adds Support for Emoji Shortcodes in Obsidian. You can find Emoji Sh
 ## How to install
 
 1. Go to **Community Plugins** in your [Obsidian](https://www.obsidian.md) Settings and **disable** Safe Mode
-2. Click on **Browse** and search for „Emoji Shortcodes“
+2. Click on **Browse** and search for "Emoji Autocomplete"
 3. Click install
 4. Toggle the Plugin on in the **Community Plugins** Tab
+  
+> Note: This plugin is incompatible with the original "Emoji Shortcodes" plugin, it replaces it. Please turn that off first.
 
-## Support me
+## Support plugin development
+If you find this Plugin helpful, consider it's further development or just say a small thank you
 
-If you find this Plugin helpful, consider supporting me:
+#### Support KraXen72
+Creator of Emoji Autocomplete and all the features on top of Emoji Shortcodes  
+[![liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/KraXen72) [![kofi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/kraxen72)
 
-<a href="https://www.buymeacoffee.com/phibr0"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=phibr0&button_colour=5F7FFF&font_colour=ffffff&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00"></a>
-
+#### Support phibr0
+Creator of [Emoji Shortcodes](https://github.com/phibr0/obsidian-emoji-shortcodes), the plugin Emoji Autocomplete was initially based on  
+[![kofi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/phibr0)
