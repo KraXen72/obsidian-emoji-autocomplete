@@ -23,8 +23,17 @@
   
 - `:joy:` will become 😂
 - `:heart:` will become :heart:
-## How to install
+- 
+## How to install (for now)
 
+Currently, the plugin is not published on the Obsidian Plugin Store yet.
+You can build it with the following instructions:
+1. `git clone` it into `<your vault>/.obsidian/plugins`
+2. `npm i` or `pnpm i` (ideal)
+3. `npm run dev` or `pnpm dev` (ideal)
+4. Turn the plugin on inside of Obsidian
+
+## How to install
 1. Go to **Community Plugins** in your [Obsidian](https://www.obsidian.md) Settings and **disable** Safe Mode
 2. Click on **Browse** and search for "Emoji Autocomplete"
 3. Click install
