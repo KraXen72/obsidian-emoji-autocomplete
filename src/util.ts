@@ -9,17 +9,17 @@ export function checkForInputBlock(
 		(tokenType.indexOf("code") === -1 && tokenType.indexOf("math") === -1); // "code" matches "inline-code" or "codeblock"
 }
 
-export function gemojiFromShortcode(shortcode: string, emojiList?: Gemoji[]) {
-	let match: Gemoji;
-	const candidates = emojiList ?? gemoji;
-	for (const candidate of candidates) {
-		if (candidate.names.some(n => n === shortcode)) {
-			match = candidate;
-			break;
-		}
-	}
-	return match
-}
+// export function gemojiFromShortcode(shortcode: string, emojiList?: Gemoji[]) {
+// 	let match: Gemoji;
+// 	const candidates = emojiList ?? gemoji;
+// 	for (const candidate of candidates) {
+// 		if (candidate.names.some(n => n === shortcode)) {
+// 			match = candidate;
+// 			break;
+// 		}
+// 	}
+// 	return match
+// }
 
 export function slimHighlight(str: string, r: [number, number]) {
 	let out = `${str.slice(0, r[0])}`

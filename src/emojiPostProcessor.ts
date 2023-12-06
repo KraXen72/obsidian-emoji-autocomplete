@@ -1,5 +1,5 @@
 import { MarkdownPostProcessor } from "obsidian";
-import { gemojiFromShortcode } from "./util";
+import { nameToEmoji } from 'gemoji'
 
 const skippedTagTypes = ["code", "mjx"]
 const shortcodeRegex = /[:][^\s:][^ \n:]*[:]/g
@@ -20,7 +20,7 @@ export default class EmojiMarkdownPostProcessor {
 			if (!el.textContent.includes(shortcode)) return false;
 			const sc = shortcode.replace(/^:/, '').replace(/:$/, '')
 			
-			el.textContent = el.textContent.replace(shortcode, gemojiFromShortcode(sc).emoji);
+			el.textContent = el.textContent.replace(shortcode, nameToEmoji[sc]);
 		}
 	}
 }
