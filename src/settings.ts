@@ -13,6 +13,7 @@ export interface EmojiPluginSettings {
 	tagSearch: boolean;
 	tagShowShortcode: boolean;
 	latinize: boolean;
+	polyfillFlags: boolean;
 }
 
 export const DEFAULT_SETTINGS: EmojiPluginSettings = {
@@ -26,7 +27,8 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	hideUnsupported: true,
 	tagSearch: true,
 	tagShowShortcode: false,
-	latinize: true
+	latinize: true,
+	polyfillFlags: false,
 }
 
 export class EmojiPluginSettingTab extends PluginSettingTab {
@@ -69,7 +71,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		
 		new Setting(containerEl)
 			.setName('Suggest by Tags')
-			.setDesc('Also suggest emoji by their tags. Example: searching for \'shuffle\' will find 🔀 (twisted_rightwards_arrow)')
+			.setDesc('Also suggest emoji by their tags. Example: searching for \'shuffle\' will find 🔀 (twisted_rightwards_arrow). Tags may sometimes be vague or unintuitive.')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.tagSearch)
 					.onChange(async value => {
@@ -179,6 +181,17 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 				cb.setValue(this.plugin.settings.latinize)
 					.onChange(async value => {
 						this.plugin.settings.latinize = value;
+						await this.plugin.saveSettings(false);
+					})
+			});
+
+		new Setting(containerEl)
+			.setName('Polyfill flag emoji (EXPERIMENTAL)')
+			.setDesc('Windows 10 does not have proper flag emoji. You can enable this to replace them. Might break some themes or other plugins!')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.polyfillFlags)
+					.onChange(async value => {
+						this.plugin.settings.polyfillFlags = value;
 						await this.plugin.saveSettings(false);
 					})
 			});

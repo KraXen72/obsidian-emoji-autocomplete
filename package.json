@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-	"version": "node version-bump.mjs && git add manifest.json versions.json"
+    "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@leeoniya/ufuzzy": "^1.0.11",
+    "country-flag-emoji-polyfill": "^0.1.4",
     "gemoji": "^8.1.0"
   }
 }

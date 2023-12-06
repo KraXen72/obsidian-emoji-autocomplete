@@ -8,6 +8,9 @@ dependencies:
   '@leeoniya/ufuzzy':
     specifier: ^1.0.11
     version: 1.0.11
+  country-flag-emoji-polyfill:
+    specifier: ^0.1.4
+    version: 0.1.4
   gemoji:
     specifier: ^8.1.0
     version: 8.1.0
@@ -275,6 +278,12 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
+  /country-flag-emoji-polyfill@0.1.4:
+    resolution: {integrity: sha512-e20azlb9yHb3mpL3lAlhkidmJgB5TELpA8oe0DPlyIfnqXhAGBmgLDpC+mm+Envh57n1xPrOfkJtXq2CrpvoGQ==}
+    dependencies:
+      is-emoji-supported: 0.0.5
+    dev: false
+
   /esbuild@0.19.8:
     resolution: {integrity: sha512-l7iffQpT2OrZfH2rXIp7/FkmaeZM0vxbxN9KfiCwGYuZqzMg/JdvX26R31Zxn/Pxvsrg3Y9N6XTcnknqDyyv4w==}
     engines: {node: '>=12'}
@@ -307,6 +316,10 @@ packages:
 
   /gemoji@8.1.0:
     resolution: {integrity: sha512-HA4Gx59dw2+tn+UAa7XEV4ufUKI4fH1KgcbenVA9YKSj1QJTT0xh5Mwv5HMFNN3l2OtUe3ZIfuRwSyZS5pLIWw==}
+    dev: false
+
+  /is-emoji-supported@0.0.5:
+    resolution: {integrity: sha512-WOlXUhDDHxYqcSmFZis+xWhhqXiK2SU0iYiqmth5Ip0FHLZQAt9rKL5ahnilE8/86WH8tZ3bmNNNC+bTzamqlw==}
     dev: false
 
   /moment@2.29.4:

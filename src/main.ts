@@ -125,7 +125,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	}
 
 	/** 
-	 * based on uFuzzy typeahead sort
+	 * loosly based on uFuzzy typeahead sort
 	 * @see https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295 
 	*/
 
