@@ -53,3 +53,9 @@ Creator of Emoji Autocomplete and all the features on top of Emoji Shortcodes
 Creator of [Emoji Shortcodes](https://github.com/phibr0/obsidian-emoji-shortcodes), the plugin Emoji Autocomplete was initially based on  
   
 [![kofi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/phibr0)
+
+## Credits
+libraries / packages that were used but modified or otherwise embedded (not in package.json)
+- `is-emoji-supported` modified the canvas with `willReadFrequently: true` and custom cache handling
+- `country-flag-emoji-polyfill` took the font and wrote custom applying logic
+- `lucide` icon pack and `icones.js.org` for several nice svg icons

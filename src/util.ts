@@ -24,7 +24,7 @@ export function checkForInputBlock(
 export function slimHighlight(str: string, r: [number, number]) {
 	let out = `${str.slice(0, r[0])}`
 	for (let i = 0; i < r.length; i = i+2) {
-		out += `<span class="ES-hl">${str.slice(r[i], r[i+1])}</span>${str.slice(r[i+1], r[i+2])}`
+		out += `<span class="EA-hl">${str.slice(r[i], r[i+1])}</span>${str.slice(r[i+1], r[i+2])}`
 	}
 	return out
 }

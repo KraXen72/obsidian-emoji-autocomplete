@@ -116,7 +116,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	fuzzy: uFuzzy;
 	cmp = new Intl.Collator('en').compare;
 	resultLimit = 18;
-	queryRegex = new RegExp(/:[^\s:][^:]*$/);
+	queryRegex = new RegExp(/:[^\s:0][^:]*$/);
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
@@ -194,9 +194,11 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	}
 
 	getSuggestions(context: EditorSuggestContext): Gemoji[] {
-		let emoji_query = context.query.replace(':', '')
-		if (this.plugin.settings.latinize) emoji_query = uFuzzy.latinize(emoji_query)
-		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, emoji_query);
+		console.time('query')
+		let emojiQuery = context.query.replace(':', '')
+		if (this.plugin.settings.latinize) emojiQuery = uFuzzy.latinize(emojiQuery)
+		// console.log("query:", emojiQuery)
+		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, emojiQuery);
 		let suggestions: ExtGemoji[] = []
 
 		// using info.idx here instead of idxs because uf.info() may have
@@ -222,8 +224,8 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	}
 
 	renderSuggestion(suggestion: ExtGemoji, el: HTMLElement) {
-		const outer = el.createDiv({ cls: "ES-suggester-container" });
-		const shortcodeDiv = outer.createDiv({ cls: "ES-shortcode", title: `shortcode: ${suggestion.names[0]}` })
+		const outer = el.createDiv({ cls: "EA-suggester-container" });
+		const shortcodeDiv = outer.createDiv({ cls: "EA-shortcode", title: `shortcode: ${suggestion.names[0]}` })
 		if (this.plugin.settings.highlightMatches) {
 			shortcodeDiv.innerHTML = slimHighlight(suggestion.matchedName, suggestion.range)
 		} else {
@@ -232,12 +234,12 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		if (suggestion.isInHistory && this.plugin.settings.considerHistory) shortcodeDiv.createDiv().outerHTML = iconHistory;
 		if (suggestion.matchedBy === 'tag') {
 			if (this.plugin.settings.tagShowShortcode) {
-				shortcodeDiv.createDiv({ cls: 'ES-tag-shortcode' }).innerHTML = `${iconChevronsRight} <span class="ES-tag-sc">${suggestion.names[0]}</span>`
+				shortcodeDiv.createDiv({ cls: 'EA-tag-shortcode' }).innerHTML = `${iconChevronsRight} <span class="EA-tag-sc">${suggestion.names[0]}</span>`
 			} else {
 				shortcodeDiv.createDiv().outerHTML = iconTags;
 			}
 		}
-		outer.createDiv({ cls: "ES-emoji", title: suggestion.names[0] }).setText(suggestion.emoji);
+		outer.createDiv({ cls: "EA-emoji", title: suggestion.names[0] }).setText(suggestion.emoji);
 	}
 
 	selectSuggestion(suggestion: ExtGemoji): void {

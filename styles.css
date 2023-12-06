@@ -1,4 +1,12 @@
-.ES-suggester-container {
+@font-face {
+	font-family: "EmojiAutocompleteFlagPolyfill";
+	unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067,
+		U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+	src: url('./TwemojiCountryFlags.woff2') format('woff2');
+	font-display: swap;
+}
+
+.EA-suggester-container {
   display: flex;
   place-content: space-between;
   min-width: 12.5rem;
@@ -6,18 +14,18 @@
   max-width: 100vw;
 }
 
-.ES-shortcode,
-.ES-tag-shortcode {
+.EA-shortcode,
+.EA-tag-shortcode {
   margin-right: 8px;
   display: flex;
   align-items: center;
 }
 
-.ES-shortcode svg {
+.EA-shortcode svg {
 	opacity: 0.6;
 	margin-left: 0.25rem;
 }
-.ES-tag-sc {
+.EA-tag-sc {
 	background: var(--code-background);
 	padding: 0rem .25rem;
 	border-radius: 3px;
@@ -25,7 +33,7 @@
 	font-size: .875rem;
 }
 
-.ES-shortcode span.ES-hl {
+.EA-shortcode span.EA-hl {
 	padding: 0;
 	border-radius: 0;
 	background-color: transparent;
@@ -35,20 +43,20 @@
 	font-weight: inherit;
 }
 
-.ES-suggestion-item {
+.EA-suggestion-item {
   border-top: solid var(--background-secondary) 1px;
   padding-left: 10px;
 }
 
-.ES-sub-setting {
+.EA-sub-setting {
   padding-left: 2em;
 }
-.ES-sub-setting + .ES-sub-setting {
+.EA-sub-setting + .EA-sub-setting {
   padding-left: 0;
   margin-left: 2em;
 }
 
-.ES-setting-gridholder {
+.EA-setting-gridholder {
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);
 	align-items: end;
@@ -59,7 +67,7 @@
 	padding-bottom: 1rem;
 }
 
-.ES-donate {
+.EA-donate {
 	display: flex;
 	column-gap: 0.5rem;
 	height: min-content;

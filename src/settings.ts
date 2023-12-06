@@ -85,7 +85,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 			new Setting(containerEl)
 				.setName('Show shortcode on tag results')
 				.setDesc('When an emoji is matched by it\'s tag, show the shortcode next to it. When disabled, looks cleaner, but you won\'t learn the proper shortcodes.')
-				.setClass('ES-sub-setting')
+				.setClass('EA-sub-setting')
 				.addToggle(cb => {
 					cb.setValue(this.plugin.settings.tagShowShortcode)
 						.onChange(async value => {
@@ -111,7 +111,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		if (this.plugin.settings.considerHistory) {
 			new Setting(containerEl)
 				.setName('History Limit')
-				.setClass('ES-sub-setting')
+				.setClass('EA-sub-setting')
 				.addText(cb => {
 					cb.setPlaceholder(`default: ${DEFAULT_SETTINGS.historyLimit}, max: 100`)
 						.setValue(String(this.plugin.settings.historyLimit))
@@ -125,7 +125,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 
 			new Setting(containerEl)
 				.setName('Clear History')
-				.setClass('ES-sub-setting')
+				.setClass('EA-sub-setting')
 				.addButton(cb => {
 					cb.setButtonText("Clear")
 						.onClick(async () => {
@@ -152,7 +152,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Re-check emoji support')
 			.setDesc('This will clear the supported/unsupported status of all emoji and re-check them.')
-			.setClass('ES-sub-setting')
+			.setClass('EA-sub-setting')
 			.addButton(cb => {
 				cb.setButtonText("Clear & Re-check")
 					.onClick(async () => {
@@ -200,12 +200,12 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 
 		const donateFragment = new DocumentFragment()
 		donateFragment.createDiv({ text: 'If you like this Plugin, consider donating to support continued development', cls: "setting-item-description" })
-		const gridHolder = donateFragment.createDiv({ cls: "ES-setting-gridholder" })
+		const gridHolder = donateFragment.createDiv({ cls: "EA-setting-gridholder" })
 
 		const author1 = gridHolder.createDiv()
 		author1.createDiv({ text: 'Support KraXen72', cls: 'setting-item-name' })
 		author1.createDiv({ text: 'Creator of Emoji Autocomplete and all the features on top of Emoji Shortcodes', cls: 'setting-item-description' })
-		gridHolder.createDiv({ cls: 'ES-donate' }).innerHTML = `
+		gridHolder.createDiv({ cls: 'EA-donate' }).innerHTML = `
 			<a href="https://liberapay.com/KraXen72" title="Support KraXen72 on LiberaPay"><img src="https://liberapay.com/assets/widgets/donate.svg" height=32></a>
 			<a href="https://ko-fi.com/kraxen72" title="Support KraXen72 on ko-fi"><img src="https://ko-fi.com/img/githubbutton_sm.svg" height=32></a>
 		`;
@@ -213,7 +213,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		const author2 = gridHolder.createDiv()
 		author2.createDiv({ text: 'Support phibr0', cls: 'setting-item-name' })
 		author2.createDiv({ text: 'Creator of Emoji Shortcodes, the plugin Emoji Autocomplete was initially based on', cls: 'setting-item-description' })
-		gridHolder.createDiv({ cls: 'ES-donate' }).innerHTML = `
+		gridHolder.createDiv({ cls: 'EA-donate' }).innerHTML = `
 			<a href="https://ko-fi.com/phibr0" title="Support phibr0 on ko-fi"><img src="https://ko-fi.com/img/githubbutton_sm.svg" height=32></a>
 		`;
 

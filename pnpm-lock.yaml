@@ -8,9 +8,6 @@ dependencies:
   '@leeoniya/ufuzzy':
     specifier: ^1.0.11
     version: 1.0.11
-  country-flag-emoji-polyfill:
-    specifier: ^0.1.4
-    version: 0.1.4
   gemoji:
     specifier: ^8.1.0
     version: 8.1.0
@@ -32,8 +29,8 @@ devDependencies:
     specifier: ^2.6.2
     version: 2.6.2
   typescript:
-    specifier: 5.3.2
-    version: 5.3.2
+    specifier: 5.3.3
+    version: 5.3.3
 
 packages:
 
@@ -278,12 +275,6 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
-  /country-flag-emoji-polyfill@0.1.4:
-    resolution: {integrity: sha512-e20azlb9yHb3mpL3lAlhkidmJgB5TELpA8oe0DPlyIfnqXhAGBmgLDpC+mm+Envh57n1xPrOfkJtXq2CrpvoGQ==}
-    dependencies:
-      is-emoji-supported: 0.0.5
-    dev: false
-
   /esbuild@0.19.8:
     resolution: {integrity: sha512-l7iffQpT2OrZfH2rXIp7/FkmaeZM0vxbxN9KfiCwGYuZqzMg/JdvX26R31Zxn/Pxvsrg3Y9N6XTcnknqDyyv4w==}
     engines: {node: '>=12'}
@@ -318,10 +309,6 @@ packages:
     resolution: {integrity: sha512-HA4Gx59dw2+tn+UAa7XEV4ufUKI4fH1KgcbenVA9YKSj1QJTT0xh5Mwv5HMFNN3l2OtUe3ZIfuRwSyZS5pLIWw==}
     dev: false
 
-  /is-emoji-supported@0.0.5:
-    resolution: {integrity: sha512-WOlXUhDDHxYqcSmFZis+xWhhqXiK2SU0iYiqmth5Ip0FHLZQAt9rKL5ahnilE8/86WH8tZ3bmNNNC+bTzamqlw==}
-    dev: false
-
   /moment@2.29.4:
     resolution: {integrity: sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w==}
     dev: true
@@ -346,8 +333,8 @@ packages:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
     dev: true
 
-  /typescript@5.3.2:
-    resolution: {integrity: sha512-6l+RyNy7oAHDfxC4FzSJcz9vnjTKxrLpDG5M2Vu4SHRVNg6xzqZp6LYSR9zjqQTu8DU/f5xwxUdADOkbrIX2gQ==}
+  /typescript@5.3.3:
+    resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}
     engines: {node: '>=14.17'}
     hasBin: true
     dev: true
