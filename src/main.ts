@@ -38,11 +38,27 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.updateEmojiList()
+		this.updateBodyFont(this.settings.polyfillFlags)
 	}
 
-	async saveSettings(update = true) {
+	async saveSettings(updateEmoji = true, updateFont = false) {
 		await this.saveData(this.settings);
-		if (update) this.updateEmojiList()
+		if (updateEmoji) this.updateEmojiList();
+		if (updateFont) this.updateBodyFont(this.settings.polyfillFlags);
+	}
+
+	updateBodyFont(value: boolean | 'toggle' = 'toggle') {
+		const propName = "--font-text-override"
+		const polyfillFont = "EmojiAutocompleteFlagPolyfill"
+		const prev = document.body.style.getPropertyValue(propName).split(",").map(f => f.trim()) ?? []
+		// console.log(prev, this.settings.polyfillFlags)
+		
+		if (prev[0] === polyfillFont) {
+			if (value === 'toggle' || value === false) prev.shift();
+		} else {
+			if (value === 'toggle' || value === true) prev.unshift(polyfillFont);
+		}
+		document.body.style.setProperty(propName, prev.join(", "))
 	}
 
 	updateEmojiList() {

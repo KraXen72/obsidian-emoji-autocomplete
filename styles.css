@@ -1,8 +1,9 @@
+/* credit: https://github.com/talkjs/country-flag-emoji-polyfill */
 @font-face {
 	font-family: "EmojiAutocompleteFlagPolyfill";
 	unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067,
 		U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
-	src: url('./TwemojiCountryFlags.woff2') format('woff2');
+	src: url('https://esm.sh/country-flag-emoji-polyfill@0.1.4/dist/TwemojiCountryFlags.woff2') format('woff2');
 	font-display: swap;
 }
 
@@ -21,7 +22,8 @@
   align-items: center;
 }
 
-.EA-shortcode svg {
+.EA-shortcode svg,
+.EA-setting-details-wrap svg {
 	opacity: 0.6;
 	margin-left: 0.25rem;
 }
@@ -31,6 +33,12 @@
 	border-radius: 3px;
 	font-family: var(--font-monospace);
 	font-size: .875rem;
+}
+.EA-emoji {
+	font-family: var(--font-text-override), var(--font-text);
+	width: 1.25rem;
+	height: 1.25rem;
+	text-align: center;
 }
 
 .EA-shortcode span.EA-hl {
@@ -54,6 +62,9 @@
 .EA-sub-setting + .EA-sub-setting {
   padding-left: 0;
   margin-left: 2em;
+}
+.EA-setting-details-wrap {
+	line-height: 1.5;
 }
 
 .EA-setting-gridholder {

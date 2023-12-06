@@ -1,6 +1,8 @@
 import { PluginSettingTab, App, Setting, Notice } from "obsidian";
 import EmojiShortcodesPlugin from "./main";
 
+const repoURL = `https://github.com/KraXen72/obsidian-emoji-autocomplete`
+
 export interface EmojiPluginSettings {
 	immediateReplace: boolean;
 	suggester: boolean;
@@ -48,8 +50,8 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		containerEl.createEl('h2', { text: 'Suggestions' });
 
 		new Setting(containerEl)
-			.setName('Emoji Suggester')
-			.setDesc('If this is turned on, a Suggester will appear everytime you type : followed by a letter. This will help you insert Emojis. (Doesn\'t work on mobile)')
+			.setName('Emoji Autocomplete')
+			.setDesc('Emoji Autocomplete will appear everytime you type : followed by a letter. This will help you insert emojis. (Might not work on mobile)')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.suggester)
 					.onChange(async value => {
@@ -60,7 +62,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Highlight matched part of suggestion')
-			.setDesc('If this is on, the part of the suggestion that is matched will be highlighted in accent color.')
+			.setDesc('Highlight the part of the suggestion that is matched in accent color.')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.highlightMatches)
 					.onChange(async value => {
@@ -70,8 +72,8 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 			});
 		
 		new Setting(containerEl)
-			.setName('Suggest by Tags')
-			.setDesc('Also suggest emoji by their tags. Example: searching for \'shuffle\' will find 🔀 (twisted_rightwards_arrow). Tags may sometimes be vague or unintuitive.')
+			.setName('Suggest emoji by tags')
+			.setDesc('Searching for \'shuffle\' will find 🔀 (twisted_rightwards_arrow). Tags may sometimes be vague or unintuitive.')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.tagSearch)
 					.onChange(async value => {
@@ -84,7 +86,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		if (this.plugin.settings.tagSearch) {
 			new Setting(containerEl)
 				.setName('Show shortcode on tag results')
-				.setDesc('When an emoji is matched by it\'s tag, show the shortcode next to it. When disabled, looks cleaner, but you won\'t learn the proper shortcodes.')
+				.setDesc('When an emoji is matched by it\'s tag, show the shortcode next to it. Helps you learn the proper shortcodes. When disabled, looks cleaner.')
 				.setClass('EA-sub-setting')
 				.addToggle(cb => {
 					cb.setValue(this.plugin.settings.tagShowShortcode)
@@ -98,7 +100,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Suggest recenly used emoji')
-			.setDesc('Suggester will boost recently used emoji. EXPERIMENTAL: please open an issue/pull request on github if this behaves unpredictably')
+			.setDesc('Suggester will boost recently used emoji')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.considerHistory)
 					.onChange(async value => {
@@ -185,14 +187,32 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 					})
 			});
 
+		const bflagFrag = new DocumentFragment()
+		bflagFrag.createDiv({ cls: 'EA-setting-details-wrap' }).innerHTML = `
+			<strong>Replaces all flag emoji with a custom font</strong><br>
+			<details>
+				<summary>Windows 10 is known to have bad flag emoji, this fixes it. More info:</summary>
+				<ul>
+					<li>Might break some themes or other plugins!</li>
+					<li title="Emoji font is imported from a CDN. It should get cached, but might not.">
+						Might not work without internet!
+					</li>
+					<li title="The plugin tries to modify the --font-text-override css variable on the body">
+						If glitched, reload obsidian or change the Text Font in Appearance
+					</li>
+				</ul>
+				<strong>Please report any bugs on <a href="${repoURL}/issues" target="_blank">github</a></strong>
+			</details>
+		`
+
 		new Setting(containerEl)
-			.setName('Polyfill flag emoji (EXPERIMENTAL)')
-			.setDesc('Windows 10 does not have proper flag emoji. You can enable this to replace them. Might break some themes or other plugins!')
+			.setName('Better flag emoji (Experimental)')
+			.setDesc(bflagFrag)
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.polyfillFlags)
 					.onChange(async value => {
 						this.plugin.settings.polyfillFlags = value;
-						await this.plugin.saveSettings(false);
+						await this.plugin.saveSettings(false, true);
 					})
 			});
 
