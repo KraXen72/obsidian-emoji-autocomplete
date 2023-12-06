@@ -19,8 +19,9 @@ export default class EmojiMarkdownPostProcessor {
 		} else {
 			if (!el.textContent.includes(shortcode)) return false;
 			const sc = shortcode.replace(/^:/, '').replace(/:$/, '')
-			
-			el.textContent = el.textContent.replace(shortcode, nameToEmoji[sc]);
+			const emoji = nameToEmoji[sc]
+			if (typeof emoji === "undefined") return false;
+			el.textContent = el.textContent.replace(shortcode, emoji);
 		}
 	}
 }

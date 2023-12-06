@@ -12,6 +12,7 @@ export interface EmojiPluginSettings {
 	hideUnsupported: boolean;
 	tagSearch: boolean;
 	tagShowShortcode: boolean;
+	latinize: boolean;
 }
 
 export const DEFAULT_SETTINGS: EmojiPluginSettings = {
@@ -25,6 +26,7 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	hideUnsupported: true,
 	tagSearch: true,
 	tagShowShortcode: false,
+	latinize: true
 }
 
 export class EmojiPluginSettingTab extends PluginSettingTab {
@@ -67,7 +69,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		
 		new Setting(containerEl)
 			.setName('Suggest by Tags')
-			.setDesc('Also suggest emoji by their tags. Example: 🔀 (twisted_rightwards_arrow) has tags [\'shuffle\']')
+			.setDesc('Also suggest emoji by their tags. Example: searching for \'shuffle\' will find 🔀 (twisted_rightwards_arrow)')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.tagSearch)
 					.onChange(async value => {
@@ -116,7 +118,6 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 							if (val > 100) val = 100;
 							this.plugin.settings.historyLimit = val;
 							await this.plugin.saveSettings();
-							// cb.setValue(val.toString())
 						})
 				});
 
@@ -162,12 +163,23 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Immediate Emoji Replace')
-			.setDesc('If this is turned on, Emoji shortcodes will be immediately replaced after typing. Otherwise they are still stored as a shortcode and you only see the Emoji in Preview Mode.')
+			.setDesc('If this is turned on, Emoji Autocomplete will be immediately replaced after typing. Otherwise they are still stored as a shortcode and you only see the Emoji in Preview Mode.')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.immediateReplace)
 					.onChange(async value => {
 						this.plugin.settings.immediateReplace = value;
-						await this.plugin.saveSettings();
+						await this.plugin.saveSettings(false);
+					})
+			});
+
+		new Setting(containerEl)
+			.setName('Remove diacritics')
+			.setDesc('If this is turned on, searching for :štár will find the same results as :star ')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.latinize)
+					.onChange(async value => {
+						this.plugin.settings.latinize = value;
+						await this.plugin.saveSettings(false);
 					})
 			});
 

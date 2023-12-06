@@ -1,5 +1,5 @@
 import { Plugin, EditorSuggest, Editor, EditorPosition, TFile, EditorSuggestTriggerInfo, EditorSuggestContext, Notice } from 'obsidian';
-import { gemoji, type Gemoji } from 'gemoji'
+import { gemoji, nameToEmoji, type Gemoji } from 'gemoji'
 import uFuzzy from '@leeoniya/ufuzzy';
 
 import EmojiMarkdownPostProcessor from './emojiPostProcessor';
@@ -18,12 +18,13 @@ interface ExtGemoji extends Gemoji {
 }
 
 export default class EmojiShortcodesPlugin extends Plugin {
-
-	settings: EmojiPluginSettings;
 	readonly emojiList: Gemoji[];
+	settings: EmojiPluginSettings;
+	/** current emoji shortcode, tag, etc. haystack */
 	shortcodeList: string[]
+	/** set of strings that are ensured to only be tags */
+	tagSet: Set<string>;
 	shortcodeIndexes: Record<string, number> = {}
-	tagIndexes: Record<string, number> = {}
 
 	async onload() {
 		await this.loadSettings();
@@ -48,6 +49,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		// console.time('emojiUpdate');
 		(this.emojiList as Gemoji[]) = gemoji
 		const shortcodeSet: Set<string> = new Set()
+		const tagSet: Set<string> = new Set()
 		const showNotice = Object.keys(this.settings.emojiSupported).length === 0
 		this.shortcodeIndexes = {}
 
@@ -73,19 +75,22 @@ export default class EmojiShortcodesPlugin extends Plugin {
 				shortcodeSet.add(n)
 				this.shortcodeIndexes[n] = i
 			}
-			if (!this.settings.tagSearch) continue;
+			if (!this.settings.tagSearch || !supported || emoji.tags.length === 0) continue;
 			for (const t of emoji.tags) { 
-				if (typeof this.shortcodeIndexes[t] === 'undefined' && supported) {
+				if (!(t in nameToEmoji)) tagSet.add(t)
+				if (typeof this.shortcodeIndexes[t] === 'undefined') {
 					shortcodeSet.add(t)
 					this.shortcodeIndexes[t] ??= i 
 				}
 			}
 		}
 		this.shortcodeList = Array.from(shortcodeSet)
+		this.tagSet = tagSet
+
 		// console.timeEnd('emojiUpdate')
 		this.saveData(this.settings);
 		if (showNotice) new Notice(`Re-checked emoji`)
-		console.log(`Updated emoji list: ${this.shortcodeList.length} items`)
+		console.log(`Updated emoji list: ${this.shortcodeList.length} items, ${tagSet.size} tags.`)
 	}
 
 	indexedGemojiFromShortcode(shortcode: string) {
@@ -126,39 +131,48 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 
 	typeAheadSort = (info: uFuzzy.Info, haystack: string[], needle: string) =>  {
 		let { idx, chars, terms, interLft2, interLft1, start, intraIns, interIns } = info;
+		const countHis = this.plugin.settings.considerHistory;
 
-		const historySort = (ia: number, ib: number) => {
-			if (!this.plugin.settings.considerHistory) return 0;
-			const aHis = this.plugin.settings.history.includes(haystack[idx[ia]])
-			const bHis = this.plugin.settings.history.includes(haystack[idx[ib]])
-			if (ia < 2) return -1;
-			if (ib < 2) return 1;
-			if (bHis && !aHis) { return 1; } else if (aHis && !bHis) { return -1; } else { return 0 }
-		}
 		const shortestSort = (ia: number, ib: number) => haystack[idx[ia]].length - haystack[idx[ib]].length
+		
+		const historyTagSort = (ia: number, ib: number) => {
+			const aVal = haystack[idx[ia]]
+			const bVal = haystack[idx[ib]]
+			const aHis = countHis ? this.plugin.settings.history.includes(aVal) : false;
+			const bHis = countHis ? this.plugin.settings.history.includes(bVal) : false;
+			const aTag = this.plugin.tagSet.has(aVal)
+			const bTag = this.plugin.tagSet.has(bVal)
+			const tagEq = aTag === bTag
+
+			if (aHis === bHis) {
+				if (tagEq) return 0;
+				if (!aTag && bTag) return -1
+				if (aTag && !bTag) return 1;
+			} else if (aHis && !bHis) {
+				if (tagEq) return -1;
+				if (aTag && !bTag) return 0;
+				if (!aTag && bHis) return -2;
+			} else if (bHis && !aHis) {
+				if (tagEq) return 1;
+				if (aTag && !bTag) return 0;
+				if (!bTag && aTag) return 2;
+			}
+			return 0;
+		}
 
 		const sorter = (ia: number, ib: number) => (
-			// most contig chars matched
-			chars[ib] - chars[ia] ||
-			// least char intra-fuzz (most contiguous)
-			intraIns[ia] - intraIns[ib] ||
-			// shortest match first
-			shortestSort(ia, ib) ||
-			// consider history
-			historySort(ia, ib) ||
-			// earliest start of match
-			// start[ia] - start[ib] ||
-			// most prefix bounds, boosted by full term matches
-			(
+			chars[ib] - chars[ia]  // most contig chars matched
+			|| intraIns[ia] - intraIns[ib]  // least char intra-fuzz (most contiguous)
+			|| historyTagSort(ia, ib) + shortestSort(ia, ib)
+			// || shortestSort(ia, ib) // most likely not needed
+			// || start[ia] - start[ib] // earliest start of match
+			|| ( // most prefix bounds, boosted by full term matches
 				(terms[ib] + interLft2[ib] + 0.5 * interLft1[ib]) -
 				(terms[ia] + interLft2[ia] + 0.5 * interLft1[ia])
-			) ||
-			// highest density of match (least span)
-			//	span[ia] - span[ib] ||
-			// highest density of match (least term inter-fuzz)
-			interIns[ia] - interIns[ib] ||
-			// alphabetic
-			this.cmp(haystack[idx[ia]], haystack[idx[ib]])
+			)
+			// || span[ia] - span[ib] // highest density of match (least span)
+			|| interIns[ia] - interIns[ib] // highest density of match (least term inter-fuzz)
+			|| this.cmp(haystack[idx[ia]], haystack[idx[ib]]) // alphabetic
 		)
 			
 		return idx.map((v, i) => i).sort(sorter)
@@ -181,6 +195,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 
 	getSuggestions(context: EditorSuggestContext): Gemoji[] {
 		let emoji_query = context.query.replace(':', '')
+		if (this.plugin.settings.latinize) emoji_query = uFuzzy.latinize(emoji_query)
 		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, emoji_query);
 		let suggestions: ExtGemoji[] = []
 
