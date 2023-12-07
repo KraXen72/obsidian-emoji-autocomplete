@@ -3,17 +3,19 @@
 > Easily insert emoji by their [shortcodes](https://emojibase.dev/shortcodes/)
     
 ## Features
-- Get autocomplete/typeahead suggestions for emoji
-- uses the [gemoji](https://github.com/wooorm/gemoji) library to get an up-to-date list of emoji
-- uses the [uFuzzy](https://github.com/leeoniya/uFuzzy) library for better fuzzy search suggestions
-  - allow some fuzzyness when searching
-  - more relevant and smart results
-- highlight matched part of emoji (optional)
-- better emoji history
-  - nice 'recent' icon     
-  - doesen't overwrite most relevant result
-- supports searching by emoji tags:
-    - typing `shuffle` will find 🔀 (twisted_rightwards_arrow)
+- Get **autocomplete/typeahead suggestions** for emoji
+- **Highlight matched part** of suggestion (optional)
+- Consider **emoji history** in suggestions (optional)
+- Supports searching by **emoji tags** (optional)
+  - typing `shuffle` will find 🔀 (twisted_rightwards_arrow)
+  - Show original shortcode inline when an emoji is found by tag (optional)
+- **Hide OS unsupported emoji** (optional)
+- **Immediately replace emoji** / keep as shortcode & show in preview mode
+- **Remove diacritics** when searching for an emoji (optional)
+- **Replace flag emoji** with nicer font (optional)
+- Uses the [gemoji](https://github.com/wooorm/gemoji) library to always have an up-to-date list of emoji
+- Uses the [uFuzzy](https://github.com/leeoniya/uFuzzy) library and a custom sorting algorithm for better fuzzy search suggestions
+
     
 **Example**  
   
@@ -23,15 +25,6 @@
   
 - `:joy:` will become 😂
 - `:heart:` will become :heart:
-  
-## How to install (for now)
-
-Currently, the plugin is not published on the Obsidian Plugin Store yet.
-You can build it with the following instructions:
-1. `git clone` it into `<your vault>/.obsidian/plugins`
-2. `npm i` or `pnpm i` (ideal)
-3. `npm run dev` or `pnpm dev` (ideal)
-4. Turn the plugin on inside of Obsidian
 
 ## How to install
 1. Go to **Community Plugins** in your [Obsidian](https://www.obsidian.md) Settings and **disable** Safe Mode
@@ -40,6 +33,16 @@ You can build it with the following instructions:
 4. Toggle the Plugin on in the **Community Plugins** Tab
   
 > Note: This plugin is incompatible with the original "Emoji Shortcodes" plugin, it replaces it. Please turn that off first.
+> It is also incompatible with the "Icon Shortcodes" plugin. Sorry.
+  
+## How to install (from source)
+
+Currently, the plugin is not published on the Obsidian Plugin Store yet.
+You can build it with the following instructions:
+1. `git clone` it into `<your vault>/.obsidian/plugins`
+2. `npm i` or `pnpm i` (ideal)
+3. `npm run dev` or `pnpm dev` (ideal)
+4. Turn the plugin on inside of Obsidian
 
 ## Support plugin development
 If you find this Plugin helpful, consider it's further development or just say a small thank you
