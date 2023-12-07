@@ -12,7 +12,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^20.10.3",
+    "@types/node": "^20.10.4",
     "builtin-modules": "^3.3.0",
     "esbuild": "^0.19.8",
     "obsidian": "latest",
