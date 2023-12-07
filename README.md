@@ -26,14 +26,15 @@
 - `:joy:` will become 😂
 - `:heart:` will become :heart:
 
+## Disclaimers
+- **This plugin is incompatible** with [Emoji Shortcodes](https://github.com/phibr0/obsidian-emoji-shortcodes) (this is a full replacement) and [Icon Shortcodes](https://github.com/aidenlx/obsidian-icon-shortcodes)
+- This plugin will make a request to `esm.sh` to get a remote font, if you enable `Better flag emoji` in settings.
+
 ## How to install
 1. Go to **Community Plugins** in your [Obsidian](https://www.obsidian.md) Settings and **disable** Safe Mode
 2. Click on **Browse** and search for "Emoji Autocomplete"
 3. Click install
 4. Toggle the Plugin on in the **Community Plugins** Tab
-  
-> Note: This plugin is incompatible with the original "Emoji Shortcodes" plugin, it replaces it. Please turn that off first.
-> It is also incompatible with the "Icon Shortcodes" plugin. Sorry.
   
 ## How to install (from source)
 
