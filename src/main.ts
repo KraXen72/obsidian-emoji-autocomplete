@@ -17,11 +17,18 @@ const emojiExtraNames: emojiExtraRecord = {
 	heartbeat: 'beating_heart',
 	'100': 'hundred_points',
 	fist_oncoming: 'brofist',
-	pray: 'folded_hands'
+	pray: 'folded_hands',
+	rotating_light: ['siren', 'police_car_light'],
+	arrow_forward: 'play_button',
+	arrow_backward: 'reverse_button',
+	rewind: 'fast_reverse_button',
+	arrow_up_small: 'upwards_button',
+	arrow_down_small: 'downwards_button'
 }
 const emojiExtraTags: emojiExtraRecord = {
 	zany_face: ['crazy', 'insane'],
-	japanese_ogre: 'oni'
+	japanese_ogre: 'oni',
+	rotating_light: 'alarm',
 }
 
 
@@ -79,6 +86,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	}
 
 	private enrichEmojiList() {
+		// TODO prevent duplicates if gemoji ever get's updated
 		for (const emoji of this.emojiList) {
 			for (const q in emojiExtraNames) {
 				if (emoji.names.includes(q)) {
@@ -88,8 +96,8 @@ export default class EmojiShortcodesPlugin extends Plugin {
 			}
 			for (const q in emojiExtraTags) {
 				if (emoji.names.includes(q)) {
-					if (typeof emojiExtraNames[q] === 'string') emoji.tags.push(emojiExtraNames[q] as string)
-					if (Array.isArray(emojiExtraNames[q])) emoji.tags.push(...emojiExtraNames[q])
+					if (typeof emojiExtraTags[q] === 'string') emoji.tags.push(emojiExtraTags[q] as string)
+					if (Array.isArray(emojiExtraTags[q])) emoji.tags.push(...emojiExtraTags[q])
 				}
 			}
 		}
