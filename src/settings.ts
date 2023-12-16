@@ -46,9 +46,6 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', { text: 'Emoji Autocomplete Plugin' });
-		containerEl.createEl('h2', { text: 'Suggestions' });
-
 		new Setting(containerEl)
 			.setName('Emoji Autocomplete')
 			.setDesc('Emoji Autocomplete will appear everytime you type : followed by a letter. This will help you insert emojis. (Might not work on mobile)')
@@ -73,7 +70,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		
 		new Setting(containerEl)
 			.setName('Suggest emoji by tags')
-			.setDesc('Searching for \'shuffle\' will find 🔀 (twisted_rightwards_arrow). Tags may sometimes be vague or unintuitive.')
+			.setDesc('E.g. Searching for \'shuffle\' will find 🔀 (twisted_rightwards_arrow). Tags may sometimes be vague or unintuitive.')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.tagSearch)
 					.onChange(async value => {
@@ -138,7 +135,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 				});
 		}
 
-		containerEl.createEl('h2', { text: 'Supported emoji' });
+		new Setting(containerEl).setName('Supported emoji').setHeading()
 
 		new Setting(containerEl)
 			.setName('Hide unsupported emoji')
@@ -163,7 +160,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 					})
 			});
 		
-		containerEl.createEl('h2', { text: 'Other' });
+			new Setting(containerEl).setName('Other').setHeading()
 
 		new Setting(containerEl)
 			.setName('Immediate Emoji Replace')
@@ -211,7 +208,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 					})
 			});
 
-		containerEl.createEl('h2', { text: 'Donate' });
+			new Setting(containerEl).setName('Donate').setHeading()
 
 		const donateFragment = new DocumentFragment()
 		donateFragment.createDiv({ text: 'If you like this Plugin, consider donating to support continued development', cls: "setting-item-description" })
