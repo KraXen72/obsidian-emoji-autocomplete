@@ -6,7 +6,24 @@ import EmojiMarkdownPostProcessor from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
 import { slimHighlight, isEmojiSupported, iconFactory } from './util';
 
-const windowsSupportedEmoji = ['relaxed', 'tm', 'registered']
+type emojiExtraRecord = Record<string, string|string[]>
+const windowsSupportedFirstChar = ['relaxed', 'tm', 'registered', 'copyright', 'm']
+const emojiExtraNames: emojiExtraRecord = {
+	large_blue_circle: 'blue_circle',
+	x: 'cross_mark',
+	cupid: 'heart_with_arrow',
+	gift_heart: 'heart_with_ribbon',
+	heartpulse: 'growing_heart',
+	heartbeat: 'beating_heart',
+	'100': 'hundred_points',
+	fist_oncoming: 'brofist',
+	pray: 'folded_hands'
+}
+const emojiExtraTags: emojiExtraRecord = {
+	zany_face: ['crazy', 'insane'],
+	japanese_ogre: 'oni'
+}
+
 
 // import DefinitionListPostProcessor from './definitionListPostProcessor';
 interface ExtGemoji extends Gemoji {
@@ -61,9 +78,27 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		document.body.style.setProperty(propName, prev.join(", "))
 	}
 
+	private enrichEmojiList() {
+		for (const emoji of this.emojiList) {
+			for (const q in emojiExtraNames) {
+				if (emoji.names.includes(q)) {
+					if (typeof emojiExtraNames[q] === 'string') emoji.names.push(emojiExtraNames[q] as string)
+					if (Array.isArray(emojiExtraNames[q])) emoji.names.push(...emojiExtraNames[q])
+				}
+			}
+			for (const q in emojiExtraTags) {
+				if (emoji.names.includes(q)) {
+					if (typeof emojiExtraNames[q] === 'string') emoji.tags.push(emojiExtraNames[q] as string)
+					if (Array.isArray(emojiExtraNames[q])) emoji.tags.push(...emojiExtraNames[q])
+				}
+			}
+		}
+	}
+
 	updateEmojiList() {
 		// console.time('emojiUpdate');
 		(this.emojiList as Gemoji[]) = gemoji
+		this.enrichEmojiList()
 		const shortcodeSet: Set<string> = new Set()
 		const tagSet: Set<string> = new Set()
 		const showNotice = Object.keys(this.settings.emojiSupported).length === 0
@@ -72,12 +107,11 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		for (let i = 0; i < gemoji.length; i++) {
 			const emoji = gemoji[i]
 			let supported = true
-			if (emoji.names.includes('large_blue_circle')) emoji.names.unshift('blue_circle')
 
 			for (const n of emoji.names) {
 				if (!(n in this.settings.emojiSupported)) {
 					if (emoji.category === 'Flags' && emoji.description.startsWith('flag:')
-					|| (navigator.userAgent.includes('Win') && windowsSupportedEmoji.includes(n))) {
+					|| (navigator.userAgent.includes('Win') && windowsSupportedFirstChar.includes(n))) {
 						this.settings.emojiSupported[n] = true
 					} else {
 						supported = isEmojiSupported(emoji.emoji)
@@ -180,7 +214,8 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		const sorter = (ia: number, ib: number) => (
 			chars[ib] - chars[ia]  // most contig chars matched
 			|| intraIns[ia] - intraIns[ib]  // least char intra-fuzz (most contiguous)
-			|| historyTagSort(ia, ib) + shortestSort(ia, ib)
+			|| historyTagSort(ia, ib)
+			|| shortestSort(ia, ib)
 			// || shortestSort(ia, ib) // most likely not needed
 			// || start[ia] - start[ib] // earliest start of match
 			|| ( // most prefix bounds, boosted by full term matches
@@ -268,7 +303,10 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		if(!this.context) return;
 		const { start, end } = this.context;
 		const shortcode = suggestion.names.includes(suggestion.matchedName) ? suggestion.matchedName : suggestion.names[0]
-		const repl = this.plugin.settings.immediateReplace ? suggestion.emoji : `:${shortcode}: `;
+		const outEm = suggestion.names.some(n => windowsSupportedFirstChar.includes(n)) && suggestion.emoji.split("").length > 1 
+			? suggestion.emoji.split("")[0] 
+			: suggestion.emoji;
+		const repl = this.plugin.settings.immediateReplace ? outEm : `:${shortcode}: `;
 
 		this.context.editor.replaceRange(repl, start, end);
 		this.plugin.updateHistory(suggestion.matchedName);
