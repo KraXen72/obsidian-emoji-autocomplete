@@ -14,7 +14,7 @@
 - **Remove diacritics** when searching for an emoji (optional)
 - **Replace flag emoji** with nicer font (optional)
 - Uses the [gemoji](https://github.com/wooorm/gemoji) library to always have an up-to-date list of emoji
-- Uses the [uFuzzy](https://github.com/leeoniya/uFuzzy) library and a custom sorting algorithm for better fuzzy search suggestions
+- Uses the [uFuzzy](https://github.com/leeoniya/uFuzzy) library and a [custom sorting algorithm](https://github.com/KraXen72/obsidian-emoji-autocomplete/blob/master/src/main.ts#L148) for better fuzzy search suggestions
 
     
 **Example**  

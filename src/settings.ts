@@ -10,6 +10,7 @@ export interface EmojiPluginSettings {
 	historyLimit: number;
 	history: string[];
 	highlightMatches: boolean;
+	triggerFromFirst: boolean;
 	emojiSupported: Record<string, boolean>;
 	hideUnsupported: boolean;
 	tagSearch: boolean;
@@ -25,6 +26,7 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	historyLimit: 25,
 	history: [],
 	highlightMatches: true,
+	triggerFromFirst: true,
 	emojiSupported: {},
 	hideUnsupported: true,
 	tagSearch: true,
@@ -48,7 +50,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Emoji Autocomplete')
-			.setDesc('Emoji Autocomplete will appear everytime you type : followed by a letter. This will help you insert emojis. (Might not work on mobile)')
+			.setDesc('Emoji autocomplete will appear everytime you type : followed by a letter. This will help you insert emojis. (Might not work on mobile)')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.suggester)
 					.onChange(async value => {
@@ -64,6 +66,31 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 				cb.setValue(this.plugin.settings.highlightMatches)
 					.onChange(async value => {
 						this.plugin.settings.highlightMatches = value;
+						await this.plugin.saveSettings();
+					})
+			});
+
+		const triggerDescFrag = new DocumentFragment()
+		const descDiv = triggerDescFrag.createDiv({ cls: 'markdown-rendered' })
+		descDiv.appendText('Turn this off to prevent the autcomplete from triggering on first letter')
+		descDiv.createEl('br')
+		descDiv.appendText(`E.g don't trigger on `)
+		descDiv.createEl('code').setText(`:3`)
+		descDiv.appendText(' or ')
+		descDiv.createEl('code').setText(`:D`)
+		descDiv.appendText(' but trigger on ')
+		descDiv.createEl('code').setText(`:Do`)
+		descDiv.appendText(', ')
+		descDiv.createEl('code').setText(`:Dog`)
+		descDiv.appendText(' etc.')
+
+		new Setting(containerEl)
+			.setName('Trigger on first letter')
+			.setDesc(triggerDescFrag)
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.triggerFromFirst)
+					.onChange(async value => {
+						this.plugin.settings.triggerFromFirst = value;
 						await this.plugin.saveSettings();
 					})
 			});
@@ -134,6 +161,8 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 						})
 				});
 		}
+
+		
 
 		new Setting(containerEl).setName('Supported emoji').setHeading()
 

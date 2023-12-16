@@ -133,6 +133,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	cmp = new Intl.Collator('en').compare;
 	resultLimit = 18;
 	queryRegex = new RegExp(/:[^\s:0][^:]*$/);
+	queryRegexOffset = new RegExp(/:[^\s:0][^:][^:]*$/);
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
@@ -197,7 +198,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
 		if (!this.plugin.settings.suggester) return null;
 		const sub = editor.getLine(cursor.line).slice(0, cursor.ch);
-		const match = sub.match(this.queryRegex)?.first();
+		const match = sub.match(this.plugin.settings.triggerFromFirst ? this.queryRegex : this.queryRegexOffset)?.first();
 		if (!match) return null;
 		return {
 			end: cursor,
