@@ -15,9 +15,11 @@
     "@types/node": "^20.10.4",
     "builtin-modules": "^3.3.0",
     "esbuild": "^0.19.8",
+    "esbuild-plugin-replace": "^1.4.0",
     "obsidian": "latest",
     "tslib": "^2.6.2",
-    "typescript": "5.3.3"
+    "typescript": "5.3.3",
+    "woff2base64": "^2.0.0"
   },
   "dependencies": {
     "@leeoniya/ufuzzy": "^1.0.11",

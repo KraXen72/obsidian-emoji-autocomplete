@@ -22,6 +22,9 @@ devDependencies:
   esbuild:
     specifier: ^0.19.8
     version: 0.19.8
+  esbuild-plugin-replace:
+    specifier: ^1.4.0
+    version: 1.4.0
   obsidian:
     specifier: latest
     version: 1.4.11(@codemirror/state@6.3.2)(@codemirror/view@6.22.1)
@@ -31,6 +34,9 @@ devDependencies:
   typescript:
     specifier: 5.3.3
     version: 5.3.3
+  woff2base64:
+    specifier: ^2.0.0
+    version: 2.0.0
 
 packages:
 
@@ -275,6 +281,12 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
+  /esbuild-plugin-replace@1.4.0:
+    resolution: {integrity: sha512-lP3ZAyzyRa5JXoOd59lJbRKNObtK8pJ/RO7o6vdjwLi71GfbL32NR22ZuS7/cLZkr10/L1lutoLma8E4DLngYg==}
+    dependencies:
+      magic-string: 0.25.9
+    dev: true
+
   /esbuild@0.19.8:
     resolution: {integrity: sha512-l7iffQpT2OrZfH2rXIp7/FkmaeZM0vxbxN9KfiCwGYuZqzMg/JdvX26R31Zxn/Pxvsrg3Y9N6XTcnknqDyyv4w==}
     engines: {node: '>=12'}
@@ -309,6 +321,16 @@ packages:
     resolution: {integrity: sha512-HA4Gx59dw2+tn+UAa7XEV4ufUKI4fH1KgcbenVA9YKSj1QJTT0xh5Mwv5HMFNN3l2OtUe3ZIfuRwSyZS5pLIWw==}
     dev: false
 
+  /lodash@4.17.21:
+    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+    dev: true
+
+  /magic-string@0.25.9:
+    resolution: {integrity: sha512-RmF0AsMzgt25qzqqLc1+MbHmhdx0ojF2Fvs4XnOqz2ZOBXzzkEwc/dJQZCYHAn7v1jbVOjAZfK8msRn4BxO4VQ==}
+    dependencies:
+      sourcemap-codec: 1.4.8
+    dev: true
+
   /moment@2.29.4:
     resolution: {integrity: sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w==}
     dev: true
@@ -323,6 +345,11 @@ packages:
       '@codemirror/view': 6.22.1
       '@types/codemirror': 5.60.8
       moment: 2.29.4
+    dev: true
+
+  /sourcemap-codec@1.4.8:
+    resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
+    deprecated: Please use @jridgewell/sourcemap-codec instead
     dev: true
 
   /style-mod@4.1.0:
@@ -345,4 +372,11 @@ packages:
 
   /w3c-keyname@2.2.8:
     resolution: {integrity: sha512-dpojBhNsCNN7T82Tm7k26A6G9ML3NkhDsnw9n/eoxSRlVBB4CEtIQ/KTCLI2Fwf3ataSXRhYFkQi3SlnFwPvPQ==}
+    dev: true
+
+  /woff2base64@2.0.0:
+    resolution: {integrity: sha512-tQRAcBpEd/6uhohV9jiekEtDZp2u2Va+5XWtD04w9qGbQZGL4tRfxnVn2Ku9BQgaDAKeMbjvMY1DY3PkIfe+7Q==}
+    engines: {node: '>=8'}
+    dependencies:
+      lodash: 4.17.21
     dev: true

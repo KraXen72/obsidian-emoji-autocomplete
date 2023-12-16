@@ -28,7 +28,6 @@
 
 ## Disclaimers
 - **This plugin is incompatible** with [Emoji Shortcodes](https://github.com/phibr0/obsidian-emoji-shortcodes) (this is a full replacement) and [Icon Shortcodes](https://github.com/aidenlx/obsidian-icon-shortcodes)
-- This makes request to `esm.sh` to get a remote font.
 
 ## How to install
 1. Go to **Community Plugins** in your [Obsidian](https://www.obsidian.md) Settings and **disable** Safe Mode
