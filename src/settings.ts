@@ -188,22 +188,17 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 			});
 
 		const bflagFrag = new DocumentFragment()
-		bflagFrag.createDiv({ cls: 'EA-setting-details-wrap' }).innerHTML = `
-			<strong>Replaces all flag emoji with a custom font</strong><br>
-			<details>
-				<summary>Windows 10 is known to have bad flag emoji, this fixes it. More info:</summary>
-				<ul>
-					<li>Might break some themes or other plugins!</li>
-					<li title="Emoji font is imported from a CDN. It should get cached, but might not.">
-						Might not work without internet!
-					</li>
-					<li title="The plugin tries to modify the --font-text-override css variable on the body">
-						If glitched, reload obsidian or change the Text Font in Appearance
-					</li>
-				</ul>
-				<strong>Please report any bugs on <a href="${repoURL}/issues" target="_blank">github</a></strong>
-			</details>
-		`
+		const flagFragW = bflagFrag.createDiv({ cls: 'EA-setting-details-wrap' })
+		flagFragW.createEl('strong').setText('Replaces all flag emoji with a custom font')
+		flagFragW.createEl('br')
+		const bflagDet = flagFragW.createEl('details')
+		bflagDet.createEl('summary').setText('Windows 10 is known to have bad flag emoji, this fixes it. More info:')
+		const bflagUl = bflagDet.createEl('ul')
+		bflagUl.createEl('li').setText('Might break some themes or other plugins!')
+		bflagUl.createEl('li', { title: 'The plugin tries to modify the --font-text-override css variable on the body' })
+			.setText('If glitched, reload obsidian or change the Text Font in Appearance')
+		bflagDet.createEl('strong').setText('Please report any bugs on ')
+		bflagDet.querySelector('strong').createEl('a', { href: `${repoURL}/issues` }).setText('github')
 
 		new Setting(containerEl)
 			.setName('Better flag emoji (Experimental)')
@@ -225,18 +220,20 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		const author1 = gridHolder.createDiv()
 		author1.createDiv({ text: 'Support KraXen72', cls: 'setting-item-name' })
 		author1.createDiv({ text: 'Creator of Emoji Autocomplete and all the features on top of Emoji Shortcodes', cls: 'setting-item-description' })
-		gridHolder.createDiv({ cls: 'EA-donate' }).innerHTML = `
-			<a href="https://liberapay.com/KraXen72" title="Support KraXen72 on LiberaPay"><img src="https://liberapay.com/assets/widgets/donate.svg" height=32></a>
-			<a href="https://ko-fi.com/kraxen72" title="Support KraXen72 on ko-fi"><img src="https://ko-fi.com/img/githubbutton_sm.svg" height=32></a>
-		`;
+		const KraXenDonateHolder = gridHolder.createDiv({ cls: 'EA-donate' })
+		KraXenDonateHolder.createEl('a', { href: 'https://liberapay.com/KraXen72', title: 'Support KraXen72 on LiberaPay' })
+			.createEl('img', { attr: { src: 'https://liberapay.com/assets/widgets/donate.svg', height: 32 } })
+		KraXenDonateHolder.createEl('a', { href: 'https://ko-fi.com/kraxen72', title: 'Support KraXen72 on ko-fi' })
+			.createEl('img', { attr: { src: 'https://ko-fi.com/img/githubbutton_sm.svg', height: 32 } })
 
 		const author2 = gridHolder.createDiv()
 		author2.createDiv({ text: 'Support phibr0', cls: 'setting-item-name' })
 		author2.createDiv({ text: 'Creator of Emoji Shortcodes, the plugin Emoji Autocomplete was initially based on', cls: 'setting-item-description' })
-		gridHolder.createDiv({ cls: 'EA-donate' }).innerHTML = `
-			<a href="https://ko-fi.com/phibr0" title="Support phibr0 on ko-fi"><img src="https://ko-fi.com/img/githubbutton_sm.svg" height=32></a>
-		`;
-
+		gridHolder
+			.createDiv({ cls: 'EA-donate' })
+			.createEl('a', { href: 'https://ko-fi.com/phibr0', title: '"Support phibr0 on ko-fi' })
+			.createEl('img', { attr: { src: 'https://ko-fi.com/img/githubbutton_sm.svg', height: 32 } })
+		
 		containerEl.appendChild(donateFragment)
 		
 	}

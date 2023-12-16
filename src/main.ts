@@ -4,7 +4,7 @@ import uFuzzy from '@leeoniya/ufuzzy';
 
 import EmojiMarkdownPostProcessor from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
-import { iconHistory, iconChevronsRight, slimHighlight, isEmojiSupported, iconTags } from './util';
+import { slimHighlight, isEmojiSupported, iconFactory } from './util';
 
 const windowsSupportedEmoji = ['relaxed', 'tm', 'registered']
 
@@ -210,7 +210,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	}
 
 	getSuggestions(context: EditorSuggestContext): Gemoji[] {
-		console.time('query')
+		// console.time('query')
 		let emojiQuery = context.query.replace(':', '')
 		if (this.plugin.settings.latinize) emojiQuery = uFuzzy.latinize(emojiQuery)
 		// console.log("query:", emojiQuery)
@@ -241,20 +241,25 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 
 	renderSuggestion(suggestion: ExtGemoji, el: HTMLElement) {
 		const outer = el.createDiv({ cls: "EA-suggester-container" });
-		const shortcodeDiv = outer.createDiv({ cls: "EA-shortcode", title: `shortcode: ${suggestion.names[0]}` })
+		let shortcodeDiv = createDiv({ cls: "EA-shortcode", title: `shortcode: ${suggestion.names[0]}` })
 		if (this.plugin.settings.highlightMatches) {
-			shortcodeDiv.innerHTML = slimHighlight(suggestion.matchedName, suggestion.range)
+			shortcodeDiv = slimHighlight(suggestion.matchedName, suggestion.range)
 		} else {
 			shortcodeDiv.setText(suggestion.matchedName);
 		}
-		if (suggestion.isInHistory && this.plugin.settings.considerHistory) shortcodeDiv.createDiv().outerHTML = iconHistory;
+		if (suggestion.isInHistory && this.plugin.settings.considerHistory) {
+			shortcodeDiv.appendChild(iconFactory('history'))
+		}
 		if (suggestion.matchedBy === 'tag') {
 			if (this.plugin.settings.tagShowShortcode) {
-				shortcodeDiv.createDiv({ cls: 'EA-tag-shortcode' }).innerHTML = `${iconChevronsRight} <span class="EA-tag-sc">${suggestion.names[0]}</span>`
+				const elTagSc = shortcodeDiv.createDiv({ cls: 'EA-tag-shortcode' })
+				elTagSc.appendChild(iconFactory('chevrons-right'))
+				elTagSc.createSpan({ cls: "EA-tag-sc" }).setText(suggestion.names[0])
 			} else {
-				shortcodeDiv.createDiv().outerHTML = iconTags;
+				shortcodeDiv.appendChild(iconFactory('tags'))
 			}
 		}
+		outer.appendChild(shortcodeDiv)
 		outer.createDiv({ cls: "EA-emoji", title: suggestion.names[0] }).setText(suggestion.emoji);
 	}
 
