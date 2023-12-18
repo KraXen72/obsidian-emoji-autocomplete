@@ -20,7 +20,7 @@ if (prod) {
 	const data = Buffer.from(await res.arrayBuffer())
 	const fontCss = woff2base64({ 'TwemojiCountryFlags.woff2': data }, { 
 		fontFaceTemplate: '<%=uri%>', banner: '', fontFamily: 'EmojiAutocompleteFlagPolyfill' 
-	} )
+	})
 	fontReplacement = fontCss.woff2
 } else {
 	fontReplacement = 'https://esm.sh/country-flag-emoji-polyfill@0.1.4/dist/TwemojiCountryFlags.woff2'

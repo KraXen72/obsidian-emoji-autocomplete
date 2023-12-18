@@ -7,7 +7,10 @@ import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './
 import { slimHighlight, isEmojiSupported, iconFactory } from './util';
 
 type emojiExtraRecord = Record<string, string|string[]>
+/** some emoji are only supported on windows as symbols. we can add them, but we slice off the other characters that don't get rendered. */
 const windowsSupportedFirstChar = ['relaxed', 'tm', 'registered', 'copyright', 'm']
+
+// add some extra names & tags to emoji
 const emojiExtraNames: emojiExtraRecord = {
 	large_blue_circle: 'blue_circle',
 	x: 'cross_mark',
@@ -42,13 +45,14 @@ interface ExtGemoji extends Gemoji {
 }
 
 export default class EmojiShortcodesPlugin extends Plugin {
-	readonly emojiList: Gemoji[];
 	settings: EmojiPluginSettings;
+
+	private emojiList: Gemoji[];
 	/** current emoji shortcode, tag, etc. haystack */
-	shortcodeList: string[]
+	private shortcodeList: string[]
 	/** set of strings that are ensured to only be tags */
-	tagSet: Set<string>;
-	shortcodeIndexes: Record<string, number> = {}
+	private tagSet: Set<string>;
+	private shortcodeIndexes: Record<string, number> = {}
 
 	async onload() {
 		await this.loadSettings();
@@ -71,7 +75,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		if (updateFont) this.updateBodyFont(this.settings.polyfillFlags);
 	}
 
-	updateBodyFont(value: boolean | 'toggle' = 'toggle') {
+	private updateBodyFont(value: boolean | 'toggle' = 'toggle') {
 		const propName = "--font-text-override"
 		const polyfillFont = "EmojiAutocompleteFlagPolyfill"
 		const prev = document.body.style.getPropertyValue(propName).split(",").map(f => f.trim()) ?? []
@@ -103,13 +107,13 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		}
 	}
 
-	updateEmojiList() {
+	private updateEmojiList() {
 		// console.time('emojiUpdate');
-		(this.emojiList as Gemoji[]) = gemoji
+		this.emojiList = gemoji
 		this.enrichEmojiList()
 		const shortcodeSet: Set<string> = new Set()
 		const tagSet: Set<string> = new Set()
-		const showNotice = Object.keys(this.settings.emojiSupported).length === 0
+		const showNotice = Object.keys(this.settings.emojiSupported).length === 0;
 		this.shortcodeIndexes = {}
 
 		for (let i = 0; i < gemoji.length; i++) {
@@ -141,9 +145,9 @@ export default class EmojiShortcodesPlugin extends Plugin {
 					this.shortcodeIndexes[t] ??= i 
 				}
 			}
-		}
-		this.shortcodeList = Array.from(shortcodeSet)
-		this.tagSet = tagSet
+		};
+		this.shortcodeList = Array.from(shortcodeSet);
+		this.tagSet = tagSet;
 
 		// console.timeEnd('emojiUpdate')
 		this.saveData(this.settings);
@@ -166,6 +170,15 @@ export default class EmojiShortcodesPlugin extends Plugin {
 
 		this.settings = Object.assign(this.settings, { history });
 		this.saveSettings(false);
+	}
+
+	/** get the tagSet */
+	get tags() {
+		return this.tagSet as ReadonlySet<string>
+	}
+	/** get the shortcodeList */
+	get shortcodes() {
+		return this.shortcodeList as ReadonlyArray<string>
 	}
 }
 
@@ -199,8 +212,8 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			const bVal = haystack[idx[ib]]
 			const aHis = countHis ? this.plugin.settings.history.includes(aVal) : false;
 			const bHis = countHis ? this.plugin.settings.history.includes(bVal) : false;
-			const aTag = this.plugin.tagSet.has(aVal)
-			const bTag = this.plugin.tagSet.has(bVal)
+			const aTag = this.plugin.tags.has(aVal)
+			const bTag = this.plugin.tags.has(bVal)
 			const tagEq = aTag === bTag
 
 			if (aHis === bHis) {
@@ -257,8 +270,10 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		// console.time('query')
 		let emojiQuery = context.query.replace(':', '')
 		if (this.plugin.settings.latinize) emojiQuery = uFuzzy.latinize(emojiQuery)
-		// console.log("query:", emojiQuery)
-		let [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodeList, emojiQuery);
+
+		// i mean, maybe casting here as normal array isn't the best, but i checked the search func
+		// and as far as i know, it doesen't modify the haystack? and it's faster than Array.from()
+		const [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodes as string[], emojiQuery);
 		let suggestions: ExtGemoji[] = []
 
 		// using info.idx here instead of idxs because uf.info() may have
@@ -266,7 +281,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		const idxs2 = info?.idx ?? idxs;
 		for (let i = 0; i <  Math.min((order?.length || 0), this.resultLimit); i++) {
 			const index = idxs2[order[i]]
-			const sc = this.plugin.shortcodeList[index]
+			const sc = this.plugin.shortcodes[index]
 			const gemoji = this.plugin.indexedGemojiFromShortcode(sc)
 			if (!gemoji) continue;
 			const extGemoji: ExtGemoji = {
@@ -280,6 +295,8 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			if (gemoji.names.includes(sc)) extGemoji.matchedBy = 'name'
 			suggestions.push(extGemoji)
 		}
+		// console.timeEnd('query') // we get <1 ms query times on 2k emoji, and 1% max sub 7ms
+		// console.log('query:', emojiQuery, 'sugg:', suggestions, searchResult)
 		return suggestions
 	}
 

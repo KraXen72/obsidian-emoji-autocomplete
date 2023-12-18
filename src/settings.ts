@@ -71,18 +71,18 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 			});
 
 		const triggerDescFrag = new DocumentFragment()
-		const descDiv = triggerDescFrag.createDiv({ cls: 'markdown-rendered' })
-		descDiv.appendText('Turn this off to prevent the autcomplete from triggering on first letter')
-		descDiv.createEl('br')
-		descDiv.appendText(`E.g don't trigger on `)
-		descDiv.createEl('code').setText(`:3`)
-		descDiv.appendText(' or ')
-		descDiv.createEl('code').setText(`:D`)
-		descDiv.appendText(' but trigger on ')
-		descDiv.createEl('code').setText(`:Do`)
-		descDiv.appendText(', ')
-		descDiv.createEl('code').setText(`:Dog`)
-		descDiv.appendText(' etc.')
+		const triggerDescW = triggerDescFrag.createDiv({ cls: 'markdown-rendered' })
+		triggerDescW.appendText('Turn this off to prevent the autcomplete from triggering on first letter')
+		triggerDescW.createEl('br')
+		triggerDescW.appendText(`E.g don't trigger on `)
+		triggerDescW.createEl('code').setText(`:3`)
+		triggerDescW.appendText(' or ')
+		triggerDescW.createEl('code').setText(`:D`)
+		triggerDescW.appendText(' but trigger on ')
+		triggerDescW.createEl('code').setText(`:Do`)
+		triggerDescW.appendText(', ')
+		triggerDescW.createEl('code').setText(`:Dog`)
+		triggerDescW.appendText(' etc.')
 
 		new Setting(containerEl)
 			.setName('Trigger on first letter')
@@ -150,7 +150,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 				});
 
 			new Setting(containerEl)
-				.setName('Clear History')
+				.setName(`Clear History (${this.plugin.settings.history.length} items)`)
 				.setClass('EA-sub-setting')
 				.addButton(cb => {
 					cb.setButtonText("Clear")
@@ -158,6 +158,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 							this.plugin.settings.history = [];
 							await this.plugin.saveSettings();
 							new Notice(`Cleared history`)
+							this.display()
 						})
 				});
 		}
@@ -189,11 +190,11 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 					})
 			});
 		
-			new Setting(containerEl).setName('Other').setHeading()
+		new Setting(containerEl).setName('Other').setHeading()
 
 		new Setting(containerEl)
 			.setName('Immediate Emoji Replace')
-			.setDesc('If this is turned on, Emoji Autocomplete will be immediately replaced after typing. Otherwise they are still stored as a shortcode and you only see the Emoji in Preview Mode.')
+			.setDesc('If this is turned on, upon submitting a completion, an emoji will be immediately inserted. Otherwise, a shortcode will be inserted and you only see the emoji in Preview Mode.')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.immediateReplace)
 					.onChange(async value => {
@@ -202,9 +203,17 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 					})
 			});
 
+
+		const latinFrag = new DocumentFragment()
+		const latinDescW = latinFrag.createDiv({ cls: 'markdown-rendered' })
+		latinDescW.appendText('If this is turned on, searching for ')
+		latinDescW.createEl('code').setText(`:štár`)
+		latinDescW.appendText(' will find the same results as ')
+		latinDescW.createEl('code').setText(`:star`)
+
 		new Setting(containerEl)
 			.setName('Remove diacritics')
-			.setDesc('If this is turned on, searching for :štár will find the same results as :star ')
+			.setDesc(latinFrag)
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.latinize)
 					.onChange(async value => {
