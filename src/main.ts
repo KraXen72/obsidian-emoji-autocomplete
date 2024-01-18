@@ -32,6 +32,7 @@ const emojiExtraTags: emojiExtraRecord = {
 	zany_face: ['crazy', 'insane'],
 	japanese_ogre: 'oni',
 	rotating_light: 'alarm',
+	shopping_cart: 'buy'
 }
 
 

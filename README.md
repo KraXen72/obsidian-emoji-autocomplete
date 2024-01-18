@@ -1,6 +1,8 @@
 # Obsidian Emoji Autocomplete 
 <!-- ![GitHub all releases](https://img.shields.io/github/downloads/phibr0/obsidian-emoji-shortcodes/total) -->
-> Easily insert emoji by their [shortcodes](https://emojibase.dev/shortcodes/)
+> Easily insert emoji by their [shortcodes](https://emojibase.dev/shortcodes/) 
+  
+✨ This plugin was featured on [Obsidian Addict](https://obsidianaddict.com/article/emoji-autocomplete/), in [several](https://obsidianaddict.com/article/helpful-plugins/) [articles](https://obsidianaddict.com/article/trending-plugins-20240115/) - Thank you!
     
 ## Features
 - Get **autocomplete/typeahead suggestions** for emoji
