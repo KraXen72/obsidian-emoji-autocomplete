@@ -188,8 +188,8 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	fuzzy: uFuzzy;
 	cmp = new Intl.Collator('en').compare;
 	resultLimit = 18;
-	queryRegex = new RegExp(/:[^\s:0][^:]*$/);
-	queryRegexOffset = new RegExp(/:[^\s:0][^:][^:]*$/);
+	queryRegex = new RegExp(/(?:^|\D)(:[^\s:][^:]*)$/);
+	queryRegexOffset = new RegExp(/(?:^|\D)(:[^\s:][^:]{2,}*)$/);
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
@@ -211,8 +211,8 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		const historyTagSort = (ia: number, ib: number) => {
 			const aVal = haystack[idx[ia]]
 			const bVal = haystack[idx[ib]]
-			const aHis = countHis ? this.plugin.settings.history.includes(aVal) : false;
-			const bHis = countHis ? this.plugin.settings.history.includes(bVal) : false;
+			const aHis = countHis ? this.plugin.settings.history.indexOf(aVal) !== -1 : false;
+			const bHis = countHis ? this.plugin.settings.history.indexOf(bVal) !== -1 : false;
 			const aTag = this.plugin.tags.has(aVal)
 			const bTag = this.plugin.tags.has(bVal)
 			const tagEq = aTag === bTag
@@ -255,7 +255,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
 		if (!this.plugin.settings.suggester) return null;
 		const sub = editor.getLine(cursor.line).slice(0, cursor.ch);
-		const match = sub.match(this.plugin.settings.triggerFromFirst ? this.queryRegex : this.queryRegexOffset)?.first();
+		let match = sub.match(this.plugin.settings.triggerFromFirst ? this.queryRegex : this.queryRegexOffset)?.[1];
 		if (!match) return null;
 		return {
 			end: cursor,
