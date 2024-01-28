@@ -189,7 +189,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	cmp = new Intl.Collator('en').compare;
 	resultLimit = 18;
 	queryRegex = new RegExp(/(?:^|\D)(:[^\s:][^:]*)$/);
-	queryRegexOffset = new RegExp(/(?:^|\D)(:[^\s:][^:]{2,}*)$/);
+	queryRegexOffset = new RegExp(/(?:^|\D)(:[^\s:][^:][^:]*)$/);
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
