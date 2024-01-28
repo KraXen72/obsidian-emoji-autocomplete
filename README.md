@@ -27,7 +27,7 @@
 </p>
   
 - `:joy:` will become 😂
-- `:heart:` will become :heart:
+- `:heart:` will become ❤
 
 ## Disclaimers
 - **This plugin is incompatible** with [Emoji Shortcodes](https://github.com/phibr0/obsidian-emoji-shortcodes) (this is a full replacement) and [Icon Shortcodes](https://github.com/aidenlx/obsidian-icon-shortcodes)
@@ -39,9 +39,6 @@
 4. Toggle the Plugin on in the **Community Plugins** Tab
   
 ## How to install (from source)
-
-Currently, the plugin is not published on the Obsidian Plugin Store yet.
-You can build it with the following instructions:
 1. `git clone` it into `<your vault>/.obsidian/plugins`
 2. `npm i` or `pnpm i` (ideal)
 3. `npm run dev` or `pnpm dev` (ideal)
