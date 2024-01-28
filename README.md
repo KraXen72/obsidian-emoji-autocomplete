@@ -26,9 +26,9 @@
 	<!-- <img width="500" align="right" src="https://user-images.githubusercontent.com/59741989/129605183-1295bfbb-760d-4b45-bf94-452f38f2b54c.gif"> -->
 </p>
   
-- `:joy:` will become 😂
-- `:heart:` will become ❤
-
+- `:joy:` will become 😂  
+- `:heart:` will become ❤  
+  
 ## Disclaimers
 - **This plugin is incompatible** with [Emoji Shortcodes](https://github.com/phibr0/obsidian-emoji-shortcodes) (this is a full replacement) and [Icon Shortcodes](https://github.com/aidenlx/obsidian-icon-shortcodes)
 
