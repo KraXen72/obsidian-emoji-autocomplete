@@ -59,22 +59,12 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 					})
 			});
 
-		new Setting(containerEl)
-			.setName('Highlight matched part of suggestion')
-			.setDesc('Highlight the part of the suggestion that is matched in accent color.')
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.highlightMatches)
-					.onChange(async value => {
-						this.plugin.settings.highlightMatches = value;
-						await this.plugin.saveSettings();
-					})
-			});
-
 		const triggerDescFrag = new DocumentFragment()
 		const triggerDescW = triggerDescFrag.createEl('details')
 		triggerDescW.createEl('summary').setText('Disable this if autocomplete is sometimes not triggering when it should.')
 		triggerDescW.appendText('With this setting on, the following will apply:')
 		const triggerDescWUl = triggerDescW.createEl("ul", { cls: 'EA-setting-details-wrap' })
+
 		const firstLetterLi = triggerDescWUl.createEl("li", { cls: 'markdown-rendered' })
 		firstLetterLi.appendText(`Don't trigger on `)
 		firstLetterLi.createEl('code').setText(`:3`)
@@ -85,9 +75,17 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		firstLetterLi.appendText(', ')
 		firstLetterLi.createEl('code').setText(`:Dog`)
 		firstLetterLi.appendText(' etc.')
+
 		const dataviewMetaLi = triggerDescWUl.createEl("li", { cls: 'markdown-rendered' })
 		dataviewMetaLi.appendText("Don't trigger on dataview inline fields: ")
 		dataviewMetaLi.createEl('code').setText(`key::value`)
+
+		const hhmmssLi = triggerDescWUl.createEl("li", { cls: 'markdown-rendered' })
+		hhmmssLi.appendText("Don't trigger on ")
+		hhmmssLi.createEl('code').setText(`HH:MM`)
+		hhmmssLi.appendText(" or ")
+		hhmmssLi.createEl('code').setText(`HH:MM:SS`)
+		hhmmssLi.appendText(" dates.")
 
 		new Setting(containerEl)
 			.setName('Stricter autocomplete trigger')
@@ -96,6 +94,17 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 				cb.setValue(this.plugin.settings.strictTrigger)
 					.onChange(async value => {
 						this.plugin.settings.strictTrigger = value;
+						await this.plugin.saveSettings();
+					})
+			});
+
+		new Setting(containerEl)
+			.setName('Highlight matched part of suggestion')
+			.setDesc('Highlight the part of the suggestion that is matched in accent color.')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.highlightMatches)
+					.onChange(async value => {
+						this.plugin.settings.highlightMatches = value;
 						await this.plugin.saveSettings();
 					})
 			});

@@ -259,9 +259,11 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		if (!this.plugin.settings.suggester) return null;
 		const sub = editor.getLine(cursor.line).slice(0, cursor.ch);
 		const matches = sub.match(this.plugin.settings.strictTrigger ? this.queryRegSt : this.queryRegex);
-		if (matches == null || !matches.groups.sc || !matches.groups.col
-			|| (this.plugin.settings.strictTrigger && (matches.groups.key && matches.groups.col.length % 2 == 0))
+		if (matches == null || matches.groups.sc == null || matches.groups.col == null
+			|| (this.plugin.settings.strictTrigger && (matches.groups.key && matches.groups.col.length % 2 === 0)) // don't match dataview key::value
+			|| (this.plugin.settings.strictTrigger && (matches.groups.col.length == 1 && !Number.isNaN(Number(matches.groups.key)))) // don't match HH:MM(:SS)
 		) return null;
+		// if (matches != null) console.log(matches)
 		return {
 			end: cursor,
 			start: {
