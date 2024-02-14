@@ -191,8 +191,8 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	fuzzy: uFuzzy;
 	cmp = new Intl.Collator('en').compare;
 	resultLimit = 18;
-	queryRegex = new RegExp(/(?:^|\D)(:[^\s:][^:]*)$/);
-	queryRegexOffset = new RegExp(/(?:^|\D)(:[^\s:][^:][^:]*)$/);
+	queryRegex = new RegExp(/(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]*)$/);
+	queryRegSt = new RegExp(/(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]+)$/);
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
@@ -258,21 +258,23 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
 		if (!this.plugin.settings.suggester) return null;
 		const sub = editor.getLine(cursor.line).slice(0, cursor.ch);
-		let match = sub.match(this.plugin.settings.triggerFromFirst ? this.queryRegex : this.queryRegexOffset)?.[1];
-		if (!match) return null;
+		const matches = sub.match(this.plugin.settings.strictTrigger ? this.queryRegSt : this.queryRegex);
+		if (matches == null || !matches.groups.sc || !matches.groups.col
+			|| (this.plugin.settings.strictTrigger && (matches.groups.key && matches.groups.col.length % 2 == 0))
+		) return null;
 		return {
 			end: cursor,
 			start: {
-				ch: sub.lastIndexOf(match),
+				ch: sub.lastIndexOf(matches.groups.sc) - matches.groups.col.length,
 				line: cursor.line,
 			},
-			query: match,
+			query: matches.groups.col + matches.groups.sc,
 		}
 	}
 
 	getSuggestions(context: EditorSuggestContext): Gemoji[] {
 		// console.time('query')
-		let emojiQuery = context.query.replace(':', '')
+		let emojiQuery = context.query.replace(/:/g, "")
 		if (this.plugin.settings.latinize) emojiQuery = uFuzzy.latinize(emojiQuery)
 
 		// i mean, maybe casting here as normal array isn't the best, but i checked the search func

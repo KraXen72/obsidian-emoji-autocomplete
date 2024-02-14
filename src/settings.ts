@@ -10,7 +10,7 @@ export interface EmojiPluginSettings {
 	historyLimit: number;
 	history: string[];
 	highlightMatches: boolean;
-	triggerFromFirst: boolean;
+	strictTrigger: boolean;
 	emojiSupported: Record<string, boolean>;
 	hideUnsupported: boolean;
 	tagSearch: boolean;
@@ -26,7 +26,7 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	historyLimit: 25,
 	history: [],
 	highlightMatches: true,
-	triggerFromFirst: true,
+	strictTrigger: true,
 	emojiSupported: {},
 	hideUnsupported: true,
 	tagSearch: true,
@@ -71,26 +71,31 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 			});
 
 		const triggerDescFrag = new DocumentFragment()
-		const triggerDescW = triggerDescFrag.createDiv({ cls: 'markdown-rendered' })
-		triggerDescW.appendText('Turn this off to prevent the autcomplete from triggering on first letter')
-		triggerDescW.createEl('br')
-		triggerDescW.appendText(`E.g don't trigger on `)
-		triggerDescW.createEl('code').setText(`:3`)
-		triggerDescW.appendText(' or ')
-		triggerDescW.createEl('code').setText(`:D`)
-		triggerDescW.appendText(' but trigger on ')
-		triggerDescW.createEl('code').setText(`:Do`)
-		triggerDescW.appendText(', ')
-		triggerDescW.createEl('code').setText(`:Dog`)
-		triggerDescW.appendText(' etc.')
+		const triggerDescW = triggerDescFrag.createEl('details')
+		triggerDescW.createEl('summary').setText('Disable this if autocomplete is sometimes not triggering when it should.')
+		triggerDescW.appendText('With this setting on, the following will apply:')
+		const triggerDescWUl = triggerDescW.createEl("ul", { cls: 'EA-setting-details-wrap' })
+		const firstLetterLi = triggerDescWUl.createEl("li", { cls: 'markdown-rendered' })
+		firstLetterLi.appendText(`Don't trigger on `)
+		firstLetterLi.createEl('code').setText(`:3`)
+		firstLetterLi.appendText(' or ')
+		firstLetterLi.createEl('code').setText(`:D`)
+		firstLetterLi.appendText(' but trigger on ')
+		firstLetterLi.createEl('code').setText(`:Do`)
+		firstLetterLi.appendText(', ')
+		firstLetterLi.createEl('code').setText(`:Dog`)
+		firstLetterLi.appendText(' etc.')
+		const dataviewMetaLi = triggerDescWUl.createEl("li", { cls: 'markdown-rendered' })
+		dataviewMetaLi.appendText("Don't trigger on dataview inline fields: ")
+		dataviewMetaLi.createEl('code').setText(`key::value`)
 
 		new Setting(containerEl)
-			.setName('Trigger on first letter')
+			.setName('Stricter autocomplete trigger')
 			.setDesc(triggerDescFrag)
 			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.triggerFromFirst)
+				cb.setValue(this.plugin.settings.strictTrigger)
 					.onChange(async value => {
-						this.plugin.settings.triggerFromFirst = value;
+						this.plugin.settings.strictTrigger = value;
 						await this.plugin.saveSettings();
 					})
 			});
