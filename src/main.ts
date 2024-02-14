@@ -26,7 +26,8 @@ const emojiExtraNames: emojiExtraRecord = {
 	arrow_backward: 'reverse_button',
 	rewind: 'fast_reverse_button',
 	arrow_up_small: 'upwards_button',
-	arrow_down_small: 'downwards_button'
+	arrow_down_small: 'downwards_button',
+	mag: "magnifying_glass" // non standard but magnifying_glass_tilted_left is stupid long.
 }
 const emojiExtraTags: emojiExtraRecord = {
 	zany_face: ['crazy', 'insane'],
