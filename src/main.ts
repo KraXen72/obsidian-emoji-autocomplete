@@ -191,8 +191,8 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	fuzzy: uFuzzy;
 	cmp = new Intl.Collator('en').compare;
 	resultLimit = 18;
-	queryRegex = new RegExp(/(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]*)$/);
-	queryRegSt = new RegExp(/(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]+)$/);
+	queryRegFi = new RegExp(/(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]*)$/); // first char triggers too
+	queryRegex = new RegExp(/(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]+)$/);
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
@@ -258,7 +258,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
 		if (!this.plugin.settings.suggester) return null;
 		const sub = editor.getLine(cursor.line).slice(0, cursor.ch);
-		const matches = sub.match(this.plugin.settings.strictTrigger ? this.queryRegSt : this.queryRegex);
+		const matches = sub.match(this.plugin.settings.triggerFromFirst ? this.queryRegFi : this.queryRegex);
 		if (matches == null || matches.groups.sc == null || matches.groups.col == null
 			|| (this.plugin.settings.strictTrigger && (matches.groups.key && matches.groups.col.length % 2 === 0)) // don't match dataview key::value
 			|| (this.plugin.settings.strictTrigger && (matches.groups.col.length == 1 && !Number.isNaN(Number(matches.groups.key)))) // don't match HH:MM(:SS)

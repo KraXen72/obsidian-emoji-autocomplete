@@ -11,6 +11,7 @@ export interface EmojiPluginSettings {
 	history: string[];
 	highlightMatches: boolean;
 	strictTrigger: boolean;
+	triggerFromFirst: boolean;
 	emojiSupported: Record<string, boolean>;
 	hideUnsupported: boolean;
 	tagSearch: boolean;
@@ -27,6 +28,7 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	history: [],
 	highlightMatches: true,
 	strictTrigger: true,
+	triggerFromFirst: true,
 	emojiSupported: {},
 	hideUnsupported: true,
 	tagSearch: true,
@@ -59,23 +61,34 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 					})
 			});
 
+		const triggerFirstFrag = new DocumentFragment()
+		const triggerFirstW = triggerFirstFrag.createEl("div", { cls: 'markdown-rendered' })
+		triggerFirstW.appendText(`If this is off, don't trigger on `)
+		triggerFirstW.createEl('code').setText(`:3`)
+		triggerFirstW.appendText(' or ')
+		triggerFirstW.createEl('code').setText(`:D`)
+		triggerFirstW.appendText(' but trigger on ')
+		triggerFirstW.createEl('code').setText(`:Do`)
+		triggerFirstW.appendText(', ')
+		triggerFirstW.createEl('code').setText(`:Dog`)
+		triggerFirstW.appendText(' etc.')
+	
+		new Setting(containerEl)
+			.setName('Trigger from first character')
+			.setDesc(triggerFirstFrag)
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.triggerFromFirst)
+					.onChange(async value => {
+						this.plugin.settings.triggerFromFirst = value;
+						await this.plugin.saveSettings();
+					})
+			});
+
 		const triggerDescFrag = new DocumentFragment()
 		const triggerDescW = triggerDescFrag.createEl('details')
 		triggerDescW.createEl('summary').setText('Disable this if autocomplete is sometimes not triggering when it should.')
 		triggerDescW.appendText('With this setting on, the following will apply:')
 		const triggerDescWUl = triggerDescW.createEl("ul", { cls: 'EA-setting-details-wrap' })
-
-		const firstLetterLi = triggerDescWUl.createEl("li", { cls: 'markdown-rendered' })
-		firstLetterLi.appendText(`Don't trigger on `)
-		firstLetterLi.createEl('code').setText(`:3`)
-		firstLetterLi.appendText(' or ')
-		firstLetterLi.createEl('code').setText(`:D`)
-		firstLetterLi.appendText(' but trigger on ')
-		firstLetterLi.createEl('code').setText(`:Do`)
-		firstLetterLi.appendText(', ')
-		firstLetterLi.createEl('code').setText(`:Dog`)
-		firstLetterLi.appendText(' etc.')
-
 		const dataviewMetaLi = triggerDescWUl.createEl("li", { cls: 'markdown-rendered' })
 		dataviewMetaLi.appendText("Don't trigger on dataview inline fields: ")
 		dataviewMetaLi.createEl('code').setText(`key::value`)
