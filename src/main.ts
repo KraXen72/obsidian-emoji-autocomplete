@@ -27,13 +27,15 @@ const emojiExtraNames: emojiExtraRecord = {
 	rewind: 'fast_reverse_button',
 	arrow_up_small: 'upwards_button',
 	arrow_down_small: 'downwards_button',
-	mag: "magnifying_glass" // non standard but magnifying_glass_tilted_left is stupid long.
+	// non-standard, added for various reasons
+	mag: "magnifying_glass"
 }
 const emojiExtraTags: emojiExtraRecord = {
 	zany_face: ['crazy', 'insane'],
 	japanese_ogre: 'oni',
 	rotating_light: 'alarm',
-	shopping_cart: 'buy'
+	shopping_cart: 'buy',
+	mate: "yerba_mate"
 }
 
 
