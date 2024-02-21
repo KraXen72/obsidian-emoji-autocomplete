@@ -219,7 +219,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			const aTag = this.plugin.tags.has(aVal)
 			const bTag = this.plugin.tags.has(bVal)
 			const tagEq = aTag === bTag
-
+			
 			if (aHis === bHis) {
 				if (tagEq) return 0;
 				if (!aTag && bTag) return -1
@@ -239,9 +239,9 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		const sorter = (ia: number, ib: number) => (
 			chars[ib] - chars[ia]  // most contig chars matched
 			|| intraIns[ia] - intraIns[ib]  // least char intra-fuzz (most contiguous)
-			|| historyTagSort(ia, ib)
-			|| start[ia] - start[ib] // earliest start of match
-			|| shortestSort(ia, ib)
+			|| historyTagSort(ia, ib) * 1.5 // history up, tags down, boosted.
+			+ start[ia] - start[ib] // earliest start of match
+			+ shortestSort(ia, ib)
 			// || shortestSort(ia, ib) // most likely not needed
 			|| ( // most prefix bounds, boosted by full term matches
 				(terms[ib] + interLft2[ib] + 0.5 * interLft1[ib]) -
