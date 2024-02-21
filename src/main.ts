@@ -240,9 +240,9 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			chars[ib] - chars[ia]  // most contig chars matched
 			|| intraIns[ia] - intraIns[ib]  // least char intra-fuzz (most contiguous)
 			|| historyTagSort(ia, ib)
+			|| start[ia] - start[ib] // earliest start of match
 			|| shortestSort(ia, ib)
 			// || shortestSort(ia, ib) // most likely not needed
-			// || start[ia] - start[ib] // earliest start of match
 			|| ( // most prefix bounds, boosted by full term matches
 				(terms[ib] + interLft2[ib] + 0.5 * interLft1[ib]) -
 				(terms[ia] + interLft2[ia] + 0.5 * interLft1[ia])
