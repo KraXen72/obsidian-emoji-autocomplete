@@ -82,7 +82,8 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	private updateBodyFont(value: boolean | 'toggle' = 'toggle') {
 		const propName = "--font-text-override"
 		const polyfillFont = "EmojiAutocompleteFlagPolyfill"
-		const prev = document.body.style.getPropertyValue(propName).split(",").map(f => f.trim()) ?? []
+		let prev = document.body.style.getPropertyValue(propName).split(",").map(f => f.trim()) ?? []
+		prev = prev.filter(f => !(f === "??" || f === ""))
 		// console.log(prev, this.settings.polyfillFlags)
 		
 		if (prev[0] === polyfillFont) {
