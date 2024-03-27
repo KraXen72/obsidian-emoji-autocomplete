@@ -1,27 +1,28 @@
-import { MarkdownPostProcessor } from "obsidian";
 import { nameToEmoji } from 'gemoji'
 
-const skippedTagTypes = ["code", "mjx"]
 const shortcodeRegex = /[:][^\s:][^ \n:]*[:]/g
 
-export default class EmojiMarkdownPostProcessor {
-
-  static emojiProcessor: MarkdownPostProcessor = (el: HTMLElement) => {
-		const matches = el.innerText.match(shortcodeRegex)
-		if (matches === null) return;
-		matches.forEach(shortcode => EmojiMarkdownPostProcessor.emojiReplace(shortcode, el)); 
+export function emojiProcessor(el: HTMLElement) {
+	// textContent instead of innerText to avoid forcing style recalculations
+	if (el.textContent.indexOf(":") === -1) return;
+	const matches = el.textContent.match(shortcodeRegex)
+	if (matches == null) return;
+	for (let i = 0; i < matches.length; i++) {
+		emojiReplace(el, matches[i])
 	}
+}
 
-	static emojiReplace(shortcode: string, el: HTMLElement){
-		if ((typeof el.tagName ==="string") && (skippedTagTypes.some(tagType => el.tagName.toLowerCase().includes(tagType)))) return false;
-		if (el.hasChildNodes()){
-			el.childNodes.forEach((child: ChildNode) => this.emojiReplace(shortcode, child as HTMLElement));
-		} else {
-			if (!el.textContent.includes(shortcode)) return false;
-			const sc = shortcode.replace(/^:/, '').replace(/:$/, '')
-			const emoji = nameToEmoji[sc]
-			if (typeof emoji === "undefined") return false;
-			el.textContent = el.textContent.replace(shortcode, emoji);
+function emojiReplace(el: HTMLElement, shortcode: string) {
+	if (el.tagName === "CODE" || el.tagName === "MJX") return false;
+	if (el.hasChildNodes()) {
+		for (let i = 0; i < el.childNodes.length; i++) {
+			emojiReplace(el.childNodes[i] as HTMLElement, shortcode);
 		}
+	} else {
+		if (!el.textContent.includes(shortcode)) return false;
+		const sc = shortcode.slice(1, -1); // slice off the :
+		const emoji = nameToEmoji[sc]
+		if (emoji == null) return false;
+		el.textContent = el.textContent.replace(shortcode, emoji);
 	}
 }

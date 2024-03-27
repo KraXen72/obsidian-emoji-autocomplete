@@ -2,7 +2,7 @@ import { Plugin, EditorSuggest, Editor, EditorPosition, TFile, EditorSuggestTrig
 import { gemoji, nameToEmoji, type Gemoji } from 'gemoji'
 import uFuzzy from '@leeoniya/ufuzzy';
 
-import EmojiMarkdownPostProcessor from './emojiPostProcessor';
+import { emojiProcessor } from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
 import { slimHighlight, isEmojiSupported, iconFactory } from './util';
 
@@ -63,7 +63,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		this.addSettingTab(new EmojiPluginSettingTab(this.app, this));
 		this.registerEditorSuggest(new EmojiSuggester(this));
 
-		this.registerMarkdownPostProcessor(EmojiMarkdownPostProcessor.emojiProcessor);
+		this.registerMarkdownPostProcessor(emojiProcessor);
 		//this.registerMarkdownPostProcessor(DefinitionListPostProcessor.definitionListProcessor);
 	}
 

@@ -1,6 +1,6 @@
 {
   "name": "obsidian-emoji-autocomplete",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "This plugin suggests emoji when you type a shortcode :smile:",
   "main": "main.js",
   "scripts": {
