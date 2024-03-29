@@ -1,5 +1,6 @@
 # Obsidian Emoji Autocomplete 
-![Obsidian plugin](https://img.shields.io/endpoint?url=https%3A%2F%2Fscambier.xyz%2Fobsidian-endpoints%2Femoji-autocomplete.json) ![GitHub all releases](https://img.shields.io/github/downloads/KraXen72/obsidian-emoji-autocomplete/total)  
+![Obsidian plugin](https://img.shields.io/endpoint?url=https%3A%2F%2Fscambier.xyz%2Fobsidian-endpoints%2Femoji-autocomplete.json) ![Lines of code](https://img.shields.io/tokei/lines/github/KraXen72/obsidian-emoji-autocomplete)
+
   
 > Easily insert emoji by their [shortcodes](https://emojibase.dev/shortcodes/)  
    
