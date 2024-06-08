@@ -45,7 +45,12 @@ interface ExtGemoji extends Gemoji {
 	range: [number, number]
 	matchedName: string,
 	isInHistory: boolean,
-	matchedBy: 'name' | 'tag' | 'mystery'
+	matchedBy: 'name' | 'tag' | 'mystery' | 'preference',
+}
+
+export interface ExtGemojiSetting{
+	extGemoji: ExtGemoji,
+	count: number,
 }
 
 export default class EmojiShortcodesPlugin extends Plugin {
@@ -177,6 +182,30 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		this.saveSettings(false);
 	}
 
+	updatePreference(matchedEmoji: ExtGemoji) {
+		if (!this.settings.considerPreference) return;
+
+		let prefIndex = this.settings.preference.findIndex(pref => pref.extGemoji.emoji == matchedEmoji.emoji);
+		let preference: ExtGemojiSetting[] = [];
+		if (prefIndex == -1) {
+			const newPref: ExtGemojiSetting = {
+				extGemoji: matchedEmoji,
+				count: 1
+			};
+			newPref.extGemoji.matchedBy = 'preference';
+			preference = [newPref, ...this.settings.preference].slice(0, this.settings.preferenceLimit);
+		} else {
+			this.settings.preference[prefIndex].count++;
+			preference = [this.settings.preference[prefIndex], 
+				...this.settings.preference.slice(0, prefIndex), 
+				...this.settings.preference.slice(prefIndex + 1, this.settings.preferenceLimit)
+			];
+		}
+		
+		this.settings = Object.assign(this.settings, { preference });
+		this.saveSettings(false);
+	}
+
 	/** get the tagSet */
 	get tags() {
 		return this.tagSet as ReadonlySet<string>
@@ -294,7 +323,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			const gemoji = this.plugin.indexedGemojiFromShortcode(sc)
 			if (!gemoji) continue;
 			const extGemoji: ExtGemoji = {
-				...gemoji, 
+				...gemoji,
 				range: info.ranges[order[i]] as [number, number],
 				matchedName: sc,
 				isInHistory: this.plugin.settings.history.includes(sc),
@@ -304,12 +333,26 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			if (gemoji.names.includes(sc)) extGemoji.matchedBy = 'name'
 			suggestions.push(extGemoji)
 		}
+
+		if (this.plugin.settings.considerPreference) {
+			let preferenceSuggestions: ExtGemoji[] = [];
+			Array.from(this.plugin.settings.preference)
+				.sort((a, b) => b.count - a.count) // descending order
+				.forEach(pref => preferenceSuggestions.push(pref.extGemoji));
+			suggestions.unshift(...preferenceSuggestions);
+		}
+
 		// console.timeEnd('query') // we get <1 ms query times on 2k emoji, and 1% max sub 7ms
 		// console.log('query:', emojiQuery, 'sugg:', suggestions, searchResult)
 		return suggestions
 	}
 
 	renderSuggestion(suggestion: ExtGemoji, el: HTMLElement) {
+		if (this.plugin.settings.considerPreference && suggestion.matchedBy == 'preference') {
+			el.addClass("EA-preferred-suggestion-item");
+			el.createDiv({cls: 'EA-emoji', title: suggestion.names[0]}).setText(suggestion.emoji);
+			return;
+		}
 		const outer = el.createDiv({ cls: "EA-suggester-container" });
 		let shortcodeDiv = createDiv({ cls: "EA-shortcode", title: `shortcode: ${suggestion.names[0]}` })
 		if (this.plugin.settings.highlightMatches) {
@@ -344,5 +387,6 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 
 		this.context.editor.replaceRange(repl, start, end);
 		this.plugin.updateHistory(suggestion.matchedName);
+		this.plugin.updatePreference(suggestion);
 	}
 }

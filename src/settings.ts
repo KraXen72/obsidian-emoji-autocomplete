@@ -1,5 +1,5 @@
 import { PluginSettingTab, App, Setting, Notice } from "obsidian";
-import EmojiShortcodesPlugin from "./main";
+import EmojiShortcodesPlugin, { ExtGemojiSetting } from "./main";
 
 const repoURL = `https://github.com/KraXen72/obsidian-emoji-autocomplete`
 
@@ -9,6 +9,9 @@ export interface EmojiPluginSettings {
 	considerHistory: boolean;
 	historyLimit: number;
 	history: string[];
+	considerPreference: boolean;
+	preferenceLimit: number;
+	preference: ExtGemojiSetting[];
 	highlightMatches: boolean;
 	strictTrigger: boolean;
 	triggerFromFirst: boolean;
@@ -26,6 +29,9 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	considerHistory: true,
 	historyLimit: 25,
 	history: [],
+	considerPreference: true,
+	preferenceLimit: 10,
+	preference: [],
 	highlightMatches: true,
 	strictTrigger: true,
 	triggerFromFirst: true,
@@ -162,15 +168,16 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 			});
 
 		if (this.plugin.settings.considerHistory) {
+			const MAX_HISTORY_RECORD = 100;
 			new Setting(containerEl)
 				.setName('History Limit')
 				.setClass('EA-sub-setting')
 				.addText(cb => {
-					cb.setPlaceholder(`default: ${DEFAULT_SETTINGS.historyLimit}, max: 100`)
+					cb.setPlaceholder(`default: ${DEFAULT_SETTINGS.historyLimit}, max: ${MAX_HISTORY_RECORD}`)
 						.setValue(String(this.plugin.settings.historyLimit))
 						.onChange(async value => {
 							let val = value !== '' ? Number(value) : DEFAULT_SETTINGS.historyLimit;
-							if (val > 100) val = 100;
+							if (val > MAX_HISTORY_RECORD) val = MAX_HISTORY_RECORD;
 							this.plugin.settings.historyLimit = val;
 							await this.plugin.saveSettings();
 						})
@@ -190,7 +197,47 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 				});
 		}
 
-		
+		new Setting(containerEl)
+		.setName('Suggest frequently used emoji')
+		.setDesc('Suggester will list frequently used emoji')
+		.addToggle(cb => {
+			cb.setValue(this.plugin.settings.considerPreference)
+				.onChange(async value => {
+					this.plugin.settings.considerPreference = value;
+					await this.plugin.saveSettings();
+					this.display();
+				})
+		});
+
+		if (this.plugin.settings.considerPreference) {
+			const MAX_PREFERENCE_RECORD = 20;
+			new Setting(containerEl)
+				.setName('Preference Limit')
+				.setClass('EA-sub-setting')
+				.addText(cb => {
+					cb.setPlaceholder(`default: ${DEFAULT_SETTINGS.preferenceLimit}, max: ${MAX_PREFERENCE_RECORD}`)
+						.setValue(String(this.plugin.settings.preferenceLimit))
+						.onChange(async value => {
+							let val = value !== '' ? Number(value) : DEFAULT_SETTINGS.preferenceLimit;
+							if (val > MAX_PREFERENCE_RECORD) val = MAX_PREFERENCE_RECORD;
+							this.plugin.settings.preferenceLimit = val;
+							await this.plugin.saveSettings();
+						});
+				});
+
+			new Setting(containerEl)
+				.setName(`Clear Preferences (${this.plugin.settings.preference.length} items)`)
+				.setClass('EA-sub-setting')
+				.addButton(cb => {
+					cb.setButtonText("Clear")
+						.onClick(async () => {
+							this.plugin.settings.preference = [];
+							await this.plugin.saveSettings();
+							new Notice(`Cleared preference`)
+							this.display()
+						});
+				});
+		}
 
 		new Setting(containerEl).setName('Supported emoji').setHeading()
 
