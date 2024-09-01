@@ -7,8 +7,11 @@ import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './
 import { slimHighlight, isEmojiSupported, iconFactory } from './util';
 
 type emojiExtraRecord = Record<string, string|string[]>
-/** some emoji are only supported on windows as symbols. we can add them, but we slice off the other characters that don't get rendered. */
-const windowsSupportedFirstChar = ['relaxed', 'tm', 'registered', 'copyright', 'm']
+/** some emoji are only partially supported
+ * - linux: we can add them without issue
+ * - windows: we can add them, but we slice off the other characters that don't get rendered. 
+ */
+const partiallySupported = ['relaxed', 'tm', 'registered', 'copyright', 'm']
 
 // add some extra names & tags to emoji
 const emojiExtraNames: emojiExtraRecord = {
@@ -35,7 +38,8 @@ const emojiExtraTags: emojiExtraRecord = {
 	japanese_ogre: 'oni',
 	rotating_light: 'alarm',
 	shopping_cart: 'buy',
-	mate: "yerba_mate"
+	mate: "yerba_mate",
+	registered: 'reserved'
 }
 
 
@@ -128,7 +132,8 @@ export default class EmojiShortcodesPlugin extends Plugin {
 			for (const n of emoji.names) {
 				if (!(n in this.settings.emojiSupported)) {
 					if (emoji.category === 'Flags' && emoji.description.startsWith('flag:')
-					|| (navigator.userAgent.includes('Win') && windowsSupportedFirstChar.includes(n))) {
+						|| ((navigator.userAgent.includes('Win') || navigator.userAgent.includes('Linux')) && partiallySupported.includes(n))
+					) {
 						this.settings.emojiSupported[n] = true
 					} else {
 						supported = isEmojiSupported(emoji.emoji)
@@ -337,7 +342,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		if(!this.context) return;
 		const { start, end } = this.context;
 		const shortcode = suggestion.names.includes(suggestion.matchedName) ? suggestion.matchedName : suggestion.names[0]
-		const outEm = suggestion.names.some(n => windowsSupportedFirstChar.includes(n)) && suggestion.emoji.split("").length > 1 
+		const outEm = suggestion.names.some(n => partiallySupported.includes(n)) && suggestion.emoji.split("").length > 1 
 			? suggestion.emoji.split("")[0] 
 			: suggestion.emoji;
 		const repl = this.plugin.settings.immediateReplace ? outEm : `:${shortcode}: `;
