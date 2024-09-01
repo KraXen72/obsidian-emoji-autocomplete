@@ -39,7 +39,10 @@ const emojiExtraTags: emojiExtraRecord = {
 	rotating_light: 'alarm',
 	shopping_cart: 'buy',
 	mate: "yerba_mate",
-	registered: 'reserved'
+	registered: 'reserved',
+	tada: 'popper',
+	white_check_mark: 'true',
+	cross_mark: 'false'
 }
 
 
