@@ -7,9 +7,9 @@ import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './
 import { slimHighlight, isEmojiSupported, iconFactory } from './util';
 
 /** Maps an existing emoji name to new alias name(s) to add */
-type ExtraNameRecord = Record<string, string | string[]>
+export type ExtraNameRecord = Record<string, string | string[]>
 /** Maps an existing emoji name to new tag(s) to add */
-type ExtraTagRecord = Record<string, string | string[]>
+export type ExtraTagRecord = Record<string, string | string[]>
 
 /** some emoji are only partially supported
  * - linux: we can add them without issue
@@ -18,7 +18,7 @@ type ExtraTagRecord = Record<string, string | string[]>
 const partiallySupported = ['relaxed', 'tm', 'registered', 'copyright', 'm']
 
 // add some extra names & tags to emoji
-const emojiExtraNames: ExtraNameRecord = {
+export const emojiExtraNames: ExtraNameRecord = {
 	large_blue_circle: 'blue_circle',
 	x: 'cross_mark',
 	cupid: 'heart_with_arrow',
@@ -36,9 +36,9 @@ const emojiExtraNames: ExtraNameRecord = {
 	arrow_down_small: 'downwards_button',
 	// non-standard, added for various reasons
 	mag: "magnifying_glass",
-	tooth: 'teeth',  // BUG FIX: was `teeth: 'tooth'` — key must be the existing name, value the new alias
+	tooth: 'teeth',
 }
-const emojiExtraTags: ExtraTagRecord = {
+export const emojiExtraTags: ExtraTagRecord = {
 	zany_face: ['crazy', 'insane'],
 	japanese_ogre: 'oni',
 	rotating_light: 'alarm',
@@ -47,8 +47,62 @@ const emojiExtraTags: ExtraTagRecord = {
 	registered: 'reserved',
 	tada: 'popper',
 	white_check_mark: 'true',
-	x: 'false',  // BUG FIX: was `cross_mark: 'false'` — `cross_mark` is a synthesized alias, not a canonical gemoji name
+	x: 'false',
 }
+
+/**
+ * Pure function: enrich a cloned emoji list with extra names and tags.
+ * Collects all additions for each emoji before applying them so the
+ * update is atomic per emoji (either both names and tags land, or neither).
+ * Exported for unit testing.
+ */
+export function applyEmojiExtras(
+	emojiList: Gemoji[],
+	extraNames: ExtraNameRecord,
+	extraTags: ExtraTagRecord,
+): void {
+	for (const emoji of emojiList) {
+		const namesToAdd: string[] = []
+		const tagsToAdd: string[] = []
+
+		for (const q in extraNames) {
+			if (!emoji.names.includes(q)) continue;
+			const val = extraNames[q]
+			if (typeof val === 'string') namesToAdd.push(val)
+			else if (Array.isArray(val)) namesToAdd.push(...val)
+		}
+
+		for (const q in extraTags) {
+			if (!emoji.names.includes(q)) continue;
+			const val = extraTags[q]
+			if (typeof val === 'string') tagsToAdd.push(val)
+			else if (Array.isArray(val)) tagsToAdd.push(...val)
+		}
+
+		emoji.names.push(...namesToAdd)
+		emoji.tags.push(...tagsToAdd)
+	}
+}
+
+/**
+ * Pure function: prepend a new entry to the history array, deduplicate,
+ * and trim to the given limit. Exported for unit testing.
+ */
+export function computeHistory(current: string[], newEntry: string, limit: number): string[] {
+	return Array.from(new Set([newEntry, ...current])).slice(0, limit)
+}
+
+/**
+ * Trigger regex — matches from the second character onwards (`:Do`, `:Dog`).
+ * Exported for unit testing.
+ */
+export const QUERY_REGEX = /(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]+)$/
+
+/**
+ * Trigger regex — also matches from the very first character (`:3`, `:D`).
+ * Exported for unit testing.
+ */
+export const QUERY_REGEX_FI = /(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]*)$/
 
 
 // import DefinitionListPostProcessor from './definitionListPostProcessor';
@@ -96,7 +150,6 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		const polyfillFont = "EmojiAutocompleteFlagPolyfill"
 		let prev = document.body.style.getPropertyValue(propName).split(",").map(f => f.trim()) ?? []
 		prev = prev.filter(f => !(f === "??" || f === ""))
-		// console.log(prev, this.settings.polyfillFlags)
 
 		if (prev[0] === polyfillFont) {
 			if (value === 'toggle' || value === false) prev.shift();
@@ -107,39 +160,12 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	}
 
 	private enrichEmojiList() {
-		for (const emoji of this.emojiList) {
-			// Collect all additions first, then apply atomically — so either both names and
-			// tags are updated for this emoji, or neither is (no partial state on early exit).
-			const namesToAdd: string[] = []
-			const tagsToAdd: string[] = []
-
-			for (const q in emojiExtraNames) {
-				if (!emoji.names.includes(q)) continue;
-				const val = emojiExtraNames[q]
-				if (typeof val === 'string') namesToAdd.push(val)
-				else if (Array.isArray(val)) namesToAdd.push(...val)
-			}
-
-			for (const q in emojiExtraTags) {
-				if (!emoji.names.includes(q)) continue;
-				const val = emojiExtraTags[q]
-				if (typeof val === 'string') tagsToAdd.push(val)
-				else if (Array.isArray(val)) tagsToAdd.push(...val)
-			}
-
-			// Apply both at once
-			emoji.names.push(...namesToAdd)
-			emoji.tags.push(...tagsToAdd)
-		}
+		applyEmojiExtras(this.emojiList, emojiExtraNames, emojiExtraTags)
 	}
 
 	private updateEmojiList() {
-		// console.time('emojiUpdate');
-
-		// BUG FIX: clone each emoji's mutable arrays before enriching.
-		// The imported `gemoji` is a module-level constant whose objects are shared across
-		// all calls. Without cloning, every updateEmojiList() call (fired on each settings
-		// save) would push duplicate names/tags onto the same underlying objects.
+		// Clone each emoji's mutable arrays before enriching to prevent duplicate
+		// pushes on subsequent calls (settings saves re-trigger this).
 		this.emojiList = gemoji.map(e => ({ ...e, names: [...e.names], tags: [...e.tags] }))
 
 		this.enrichEmojiList()
@@ -182,7 +208,6 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		this.shortcodeList = Array.from(shortcodeSet);
 		this.tagSet = tagSet;
 
-		// console.timeEnd('emojiUpdate')
 		this.saveData(this.settings);
 		if (showNotice) new Notice(`Re-checked emoji`)
 		console.log(`Updated emoji list: ${this.shortcodeList.length} items, ${tagSet.size} tags.`)
@@ -197,11 +222,9 @@ export default class EmojiShortcodesPlugin extends Plugin {
 
 	updateHistory(matchedShortcode: string) {
 		if (!this.settings.considerHistory) return;
-
-		const set = new Set([matchedShortcode, ...this.settings.history]);
-		const history = Array.from(set).slice(0, this.settings.historyLimit);
-
-		this.settings = Object.assign(this.settings, { history });
+		this.settings = Object.assign(this.settings, {
+			history: computeHistory(this.settings.history, matchedShortcode, this.settings.historyLimit)
+		});
 		this.saveSettings(false);
 	}
 
@@ -220,8 +243,6 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	fuzzy: uFuzzy;
 	cmp = new Intl.Collator('en').compare;
 	resultLimit = 18;
-	queryRegFi = new RegExp(/(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]*)$/); // first char triggers too
-	queryRegex = new RegExp(/(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]+)$/);
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
@@ -233,7 +254,6 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	 * loosly based on uFuzzy typeahead sort
 	 * @see https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295 
 	*/
-
 	typeAheadSort = (info: uFuzzy.Info, haystack: string[], _needle: string) => {
 		let { idx, chars, terms, interLft2, interLft1, start, intraIns, interIns } = info;
 		const countHis = this.plugin.settings.considerHistory;
@@ -287,12 +307,12 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	onTrigger(cursor: EditorPosition, editor: Editor, _: TFile): EditorSuggestTriggerInfo | null {
 		if (!this.plugin.settings.suggester) return null;
 		const sub = editor.getLine(cursor.line).slice(0, cursor.ch);
-		const matches = sub.match(this.plugin.settings.triggerFromFirst ? this.queryRegFi : this.queryRegex);
+		const regex = this.plugin.settings.triggerFromFirst ? QUERY_REGEX_FI : QUERY_REGEX
+		const matches = sub.match(regex);
 		if (matches == null || matches?.groups?.sc == null || matches.groups.col == null
-			|| (this.plugin.settings.strictTrigger && (matches.groups.key && matches.groups.col.length % 2 === 0)) // don't match dataview key::value
-			|| (this.plugin.settings.strictTrigger && (matches.groups.col.length == 1 && !Number.isNaN(Number(matches.groups.key)))) // don't match HH:MM(:SS)
+			|| (this.plugin.settings.strictTrigger && (matches.groups.key && matches.groups.col.length % 2 === 0))
+			|| (this.plugin.settings.strictTrigger && (matches.groups.col.length == 1 && !Number.isNaN(Number(matches.groups.key))))
 		) return null;
-		// if (matches != null) console.log(matches)
 		return {
 			end: cursor,
 			start: {
@@ -304,12 +324,9 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	}
 
 	getSuggestions(context: EditorSuggestContext): Gemoji[] {
-		// console.time('query')
 		let emojiQuery = context.query.replace(/:/g, "")
 		if (this.plugin.settings.latinize) emojiQuery = uFuzzy.latinize(emojiQuery)
 
-		// i mean, maybe casting here as normal array isn't the best, but i checked the search func
-		// and as far as i know, it doesen't modify the haystack? and it's faster than Array.from()
 		const [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodes as string[], emojiQuery);
 		let suggestions: ExtGemoji[] = []
 
@@ -328,8 +345,6 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 				isInHistory: this.plugin.settings.history.includes(sc),
 				matchedBy: 'mystery'
 			}
-			// BUG FIX: use else-if so a shortcode that appears in both arrays
-			// doesn't silently fall through and always resolve to 'name'.
 			if (gemoji.tags.includes(sc)) extGemoji.matchedBy = 'tag'
 			else if (gemoji.names.includes(sc)) extGemoji.matchedBy = 'name'
 			suggestions.push(extGemoji)
