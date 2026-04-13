@@ -97,7 +97,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		let prev = document.body.style.getPropertyValue(propName).split(",").map(f => f.trim()) ?? []
 		prev = prev.filter(f => !(f === "??" || f === ""))
 		// console.log(prev, this.settings.polyfillFlags)
-		
+
 		if (prev[0] === polyfillFont) {
 			if (value === 'toggle' || value === false) prev.shift();
 		} else {
@@ -171,11 +171,11 @@ export default class EmojiShortcodesPlugin extends Plugin {
 				this.shortcodeIndexes[n] = i
 			}
 			if (!this.settings.tagSearch || !supported || emoji.tags.length === 0) continue;
-			for (const t of emoji.tags) { 
+			for (const t of emoji.tags) {
 				if (!(t in nameToEmoji)) tagSet.add(t)
 				if (typeof this.shortcodeIndexes[t] === 'undefined') {
 					shortcodeSet.add(t)
-					this.shortcodeIndexes[t] ??= i 
+					this.shortcodeIndexes[t] ??= i
 				}
 			}
 		};
@@ -234,12 +234,12 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	 * @see https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295 
 	*/
 
-	typeAheadSort = (info: uFuzzy.Info, haystack: string[], _needle: string) =>  {
+	typeAheadSort = (info: uFuzzy.Info, haystack: string[], _needle: string) => {
 		let { idx, chars, terms, interLft2, interLft1, start, intraIns, interIns } = info;
 		const countHis = this.plugin.settings.considerHistory;
 
 		const shortestSort = (ia: number, ib: number) => haystack[idx[ia]].length - haystack[idx[ib]].length
-		
+
 		const historyTagSort = (ia: number, ib: number) => {
 			const aVal = haystack[idx[ia]]
 			const bVal = haystack[idx[ib]]
@@ -248,7 +248,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			const aTag = this.plugin.tags.has(aVal)
 			const bTag = this.plugin.tags.has(bVal)
 			const tagEq = aTag === bTag
-			
+
 			if (aHis === bHis) {
 				if (tagEq) return 0;
 				if (!aTag && bTag) return -1
@@ -280,7 +280,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			|| interIns[ia] - interIns[ib] // highest density of match (least term inter-fuzz)
 			|| this.cmp(haystack[idx[ia]], haystack[idx[ib]]) // alphabetic
 		)
-			
+
 		return idx.map((v, i) => i).sort(sorter)
 	};
 
@@ -316,13 +316,13 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		// using info.idx here instead of idxs because uf.info() may have
 		// further reduced the initial idxs based on prefix/suffix rules	
 		const idxs2 = info?.idx ?? idxs;
-		for (let i = 0; i <  Math.min((order?.length || 0), this.resultLimit); i++) {
+		for (let i = 0; i < Math.min((order?.length || 0), this.resultLimit); i++) {
 			const index = idxs2[order[i]]
 			const sc = this.plugin.shortcodes[index]
 			const gemoji = this.plugin.indexedGemojiFromShortcode(sc)
 			if (!gemoji) continue;
 			const extGemoji: ExtGemoji = {
-				...gemoji, 
+				...gemoji,
 				range: info.ranges[order[i]] as [number, number],
 				matchedName: sc,
 				isInHistory: this.plugin.settings.history.includes(sc),
@@ -364,11 +364,11 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	}
 
 	selectSuggestion(suggestion: ExtGemoji): void {
-		if(!this.context) return;
+		if (!this.context) return;
 		const { start, end } = this.context;
 		const shortcode = suggestion.names.includes(suggestion.matchedName) ? suggestion.matchedName : suggestion.names[0]
-		const outEm = suggestion.names.some(n => partiallySupported.includes(n)) && suggestion.emoji.split("").length > 1 
-			? suggestion.emoji.split("")[0] 
+		const outEm = suggestion.names.some(n => partiallySupported.includes(n)) && suggestion.emoji.split("").length > 1
+			? suggestion.emoji.split("")[0]
 			: suggestion.emoji;
 		const repl = this.plugin.settings.immediateReplace ? outEm : `:${shortcode}: `;
 
