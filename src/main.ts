@@ -32,7 +32,6 @@ const emojiExtraNames: emojiExtraRecord = {
 	arrow_down_small: 'downwards_button',
 	// non-standard, added for various reasons
 	mag: "magnifying_glass",
-	teeth: "tooth",
 }
 const emojiExtraTags: emojiExtraRecord = {
 	zany_face: ['crazy', 'insane'],
@@ -43,7 +42,7 @@ const emojiExtraTags: emojiExtraRecord = {
 	registered: 'reserved',
 	tada: 'popper',
 	white_check_mark: 'true',
-	cross_mark: 'false'
+	cross_mark: 'false',
 }
 
 
@@ -103,7 +102,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	}
 
 	private enrichEmojiList() {
-		// TODO prevent duplicates if gemoji ever get's updated
+		// TODO prevent duplicates if gemoji ever gets updated
 		for (const emoji of this.emojiList) {
 			for (const q in emojiExtraNames) {
 				if (emoji.names.includes(q)) {
