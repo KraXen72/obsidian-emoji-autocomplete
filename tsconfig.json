@@ -1,23 +1,22 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "inlineSourceMap": true,
     "inlineSources": true,
     "module": "ESNext",
     "target": "ES2018",
     "allowJs": true,
     "noImplicitAny": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "importHelpers": true,
-	"allowSyntheticDefaultImports": true,
-	"isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
     "lib": [
       "dom",
       "es5",
-	  "es6",
-	  "es7",
+      "es6",
+      "es7",
       "scripthost",
-      "es2015"
+      "es2023"
     ]
   },
   "include": [

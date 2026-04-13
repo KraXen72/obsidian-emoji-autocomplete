@@ -1,5 +1,4 @@
 import process from "process";
-import fs from 'fs';
 
 import esbuild from "esbuild";
 import builtins from "builtin-modules";

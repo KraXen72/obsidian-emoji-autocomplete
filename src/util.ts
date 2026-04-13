@@ -1,14 +1,5 @@
 // import { gemoji, type Gemoji } from "gemoji";
 
-export function checkForInputBlock(
-	cmEditor: CodeMirror.Editor,
-	cursorPos: CodeMirror.Position,
-): boolean {
-	const tokenType = cmEditor.getTokenAt(cursorPos, true).type;
-	return (typeof tokenType !== "string") ||
-		(tokenType.indexOf("code") === -1 && tokenType.indexOf("math") === -1); // "code" matches "inline-code" or "codeblock"
-}
-
 // export function gemojiFromShortcode(shortcode: string, emojiList?: Gemoji[]) {
 // 	let match: Gemoji;
 // 	const candidates = emojiList ?? gemoji;
@@ -37,7 +28,7 @@ const CANVAS_HEIGHT = 25;
 const CANVAS_WIDTH = 20;
 const textSize = Math.floor(CANVAS_HEIGHT / 2);
 
-// Initialize convas context
+// Initialize canvas context
 ctx.font = textSize + 'px Arial, Sans-Serif';
 ctx.textBaseline = 'top';
 ctx.canvas.width = CANVAS_WIDTH * 2;
@@ -71,7 +62,7 @@ export function isEmojiSupported(unicode: string) {
 	}
 
 	// Emoji has immutable color, so we check the color of the emoji in two different colors
-	// the result show be the same.
+	// the result should be the same.
 	const x = CANVAS_WIDTH + ((i / 4) % CANVAS_WIDTH);
 	const y = Math.floor(i / 4 / CANVAS_WIDTH);
 	const b = ctx.getImageData(x, y, 1, 1).data;
