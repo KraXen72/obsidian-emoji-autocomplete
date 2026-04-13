@@ -4,7 +4,9 @@
   "description": "This plugin suggests emoji when you type a shortcode :smile:",
   "main": "main.js",
   "scripts": {
-    "dev": "node esbuild.config.mjs",
+    "build:dev": "node esbuild.config.mjs",
+    "watcher": "DEST='/media/win/#blackhole/.obsidian/plugins/obsidian-emoji-autocomplete-dev/' && mkdir -p \"$DEST\" && ls main.js manifest.json styles.css | entr cp main.js manifest.json styles.css \"$DEST\"",
+    "dev": "concurrently --kill-others --names \"build,watch\" -c \"cyan,magenta\" \"pnpm build:dev\" \"pnpm watcher\"",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "bump": "node ./versionbump.mjs && git add manifest.json versions.json"
   },
@@ -12,17 +14,18 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^20.16.3",
+    "@types/node": "^20.19.39",
     "builtin-modules": "^3.3.0",
+    "concurrently": "^9.2.1",
     "esbuild": "^0.23.1",
     "esbuild-plugin-replace": "^1.4.0",
     "obsidian": "latest",
-    "tslib": "^2.7.0",
+    "tslib": "^2.8.1",
     "typescript": "5.5.4",
     "woff2base64": "^2.0.0"
   },
   "dependencies": {
-    "@leeoniya/ufuzzy": "^1.0.14",
+    "@leeoniya/ufuzzy": "^1.0.19",
     "gemoji": "^8.1.0"
   }
 }
