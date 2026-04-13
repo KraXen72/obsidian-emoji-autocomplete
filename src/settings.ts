@@ -1,3 +1,4 @@
+
 import { PluginSettingTab, App, Setting, Notice } from "obsidian";
 import EmojiShortcodesPlugin from "./main";
 
@@ -8,7 +9,7 @@ export interface EmojiPluginSettings {
 	suggester: boolean;
 	considerHistory: boolean;
 	historyLimit: number;
-	history: string[];
+	history: Record<string, number>;
 	highlightMatches: boolean;
 	strictTrigger: boolean;
 	triggerFromFirst: boolean;
@@ -25,7 +26,7 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	suggester: true,
 	considerHistory: true,
 	historyLimit: 25,
-	history: [],
+	history: {},
 	highlightMatches: true,
 	strictTrigger: true,
 	triggerFromFirst: true,
@@ -177,12 +178,12 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 				});
 
 			new Setting(containerEl)
-				.setName(`Clear History (${this.plugin.settings.history.length} items)`)
+				.setName(`Clear History (${Object.keys(this.plugin.settings.history).length} items)`)
 				.setClass('EA-sub-setting')
 				.addButton(cb => {
 					cb.setButtonText("Clear")
 						.onClick(async () => {
-							this.plugin.settings.history = [];
+							this.plugin.settings.history = {};
 							await this.plugin.saveSettings();
 							new Notice(`Cleared history`)
 							this.display()

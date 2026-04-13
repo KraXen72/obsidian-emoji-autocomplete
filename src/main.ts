@@ -1,3 +1,4 @@
+
 import { Plugin, EditorSuggest, Editor, EditorPosition, TFile, EditorSuggestTriggerInfo, EditorSuggestContext, Notice } from 'obsidian';
 import { gemoji, nameToEmoji, type Gemoji } from 'gemoji'
 import uFuzzy from '@leeoniya/ufuzzy';
@@ -85,24 +86,45 @@ export function applyEmojiExtras(
 }
 
 /**
- * Pure function: prepend a new entry to the history array, deduplicate,
- * and trim to the given limit. Exported for unit testing.
+ * Pure function: increment the use-count for newEntry in the history record
+ * and evict the least-used entry if the record exceeds limit.
+ * The newly added entry is never evicted even on a tie.
+ * Exported for unit testing.
  */
-export function computeHistory(current: string[], newEntry: string, limit: number): string[] {
-	return Array.from(new Set([newEntry, ...current])).slice(0, limit)
+export function computeHistory(
+	current: Record<string, number>,
+	newEntry: string,
+	limit: number,
+): Record<string, number> {
+	const next = { ...current, [newEntry]: (current[newEntry] ?? 0) + 1 }
+	const keys = Object.keys(next)
+	if (keys.length <= limit) return next
+	// Find the least-used entry that is not the one just added and evict it.
+	const victim = keys
+		.filter(k => k !== newEntry)
+		.reduce((a, b) => next[a] <= next[b] ? a : b)
+	const { [victim]: _removed, ...trimmed } = next
+	return trimmed
 }
 
 /**
  * Trigger regex — matches from the second character onwards (`:Do`, `:Dog`).
+ * Restricted to ASCII word characters + spaces so that non-ASCII input
+ * (e.g. Cyrillic: `:sob фыва`) does not trigger the suggester. uFuzzy
+ * silently ignores non-ASCII tokens, which would cause `:sob фыва` to behave
+ * identically to `:sob` and return results unexpectedly.
+ * Spaces are still allowed after the first character for multi-word searches
+ * like `:flag united`.
  * Exported for unit testing.
  */
-export const QUERY_REGEX = /(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]+)$/
+export const QUERY_REGEX = /(?<key>[^\s:]+)?(?<col>:+)(?<sc>[a-zA-Z0-9_-][a-zA-Z0-9_ -]+)$/
 
 /**
  * Trigger regex — also matches from the very first character (`:3`, `:D`).
+ * Same ASCII restriction as QUERY_REGEX.
  * Exported for unit testing.
  */
-export const QUERY_REGEX_FI = /(?<key>[^\s:]+)?(?<col>:+)(?<sc>[^\s:][^:\n]*)$/
+export const QUERY_REGEX_FI = /(?<key>[^\s:]+)?(?<col>:+)(?<sc>[a-zA-Z0-9_-][a-zA-Z0-9_ -]*)$/
 
 
 // import DefinitionListPostProcessor from './definitionListPostProcessor';
@@ -135,6 +157,12 @@ export default class EmojiShortcodesPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		// Migrate legacy array-format history to the frequency record format.
+		// Old format: string[] (most-recent first). New format: Record<string, number>.
+		if (Array.isArray(this.settings.history)) {
+			const legacy = this.settings.history as unknown as string[]
+			this.settings.history = Object.fromEntries(legacy.map(s => [s, 1]))
+		}
 		this.updateEmojiList()
 		this.updateBodyFont(this.settings.polyfillFlags)
 	}
@@ -250,55 +278,33 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		this.fuzzy = new uFuzzy({ sort: this.typeAheadSort, interChars: '.' });
 	}
 
-	/** 
+	/**
 	 * loosly based on uFuzzy typeahead sort
-	 * @see https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295 
-	*/
+	 * @see https://github.com/leeoniya/uFuzzy/blob/main/demos/compare.html#L295
+	 */
 	typeAheadSort = (info: uFuzzy.Info, haystack: string[], _needle: string) => {
-		let { idx, chars, terms, interLft2, interLft1, start, intraIns, interIns } = info;
-		const countHis = this.plugin.settings.considerHistory;
+		const { idx, chars, terms, interLft2, interLft1, start, intraIns, interIns } = info;
+		const history = this.plugin.settings.considerHistory
+			? this.plugin.settings.history
+			: {} as Record<string, number>
 
+		const freq  = (i: number) => history[haystack[idx[i]]] ?? 0
+		const isTag = (i: number) => this.plugin.tags.has(haystack[idx[i]])
 		const shortestSort = (ia: number, ib: number) => haystack[idx[ia]].length - haystack[idx[ib]].length
 
-		const historyTagSort = (ia: number, ib: number) => {
-			const aVal = haystack[idx[ia]]
-			const bVal = haystack[idx[ib]]
-			const aHis = countHis ? this.plugin.settings.history.indexOf(aVal) !== -1 : false;
-			const bHis = countHis ? this.plugin.settings.history.indexOf(bVal) !== -1 : false;
-			const aTag = this.plugin.tags.has(aVal)
-			const bTag = this.plugin.tags.has(bVal)
-			const tagEq = aTag === bTag
-
-			if (aHis === bHis) {
-				if (tagEq) return 0;
-				if (!aTag && bTag) return -1
-				if (aTag && !bTag) return 1;
-			} else if (aHis && !bHis) {
-				if (tagEq) return -1;
-				if (aTag && !bTag) return 0;
-				if (!aTag && bHis) return -2;
-			} else if (bHis && !aHis) {
-				if (tagEq) return 1;
-				if (aTag && !bTag) return 0;
-				if (!bTag && aTag) return 2;
-			}
-			return 0;
-		}
-
 		const sorter = (ia: number, ib: number) => (
-			chars[ib] - chars[ia]  // most contig chars matched
-			|| intraIns[ia] - intraIns[ib]  // least char intra-fuzz (most contiguous)
-			|| historyTagSort(ia, ib) * 1.5 // history up, tags down, boosted.
-			+ start[ia] - start[ib] // earliest start of match
-			+ shortestSort(ia, ib)
-			// || shortestSort(ia, ib) // most likely not needed
-			|| ( // most prefix bounds, boosted by full term matches
+			chars[ib] - chars[ia]																				// most contig chars matched
+			|| intraIns[ia] - intraIns[ib]															// least char intra-fuzz (most contiguous)
+			|| start[ia] - start[ib]																		// prefix priority
+			|| Math.log1p(freq(ib)) - Math.log1p(freq(ia))							// more-used emoji rank first
+			|| (isTag(ia) ? 1 : 0) - (isTag(ib) ? 1 : 0)								// name match > tag match
+			|| shortestSort(ia, ib)																			// shorter name as tiebreaker
+			|| (																												// most prefix bounds, boosted by full term matches
 				(terms[ib] + interLft2[ib] + 0.5 * interLft1[ib]) -
 				(terms[ia] + interLft2[ia] + 0.5 * interLft1[ia])
 			)
-			// || span[ia] - span[ib] // highest density of match (least span)
-			|| interIns[ia] - interIns[ib] // highest density of match (least term inter-fuzz)
-			|| this.cmp(haystack[idx[ia]], haystack[idx[ib]]) // alphabetic
+			|| interIns[ia] - interIns[ib]															// highest density of match (least term inter-fuzz)
+			|| this.cmp(haystack[idx[ia]], haystack[idx[ib]])						// alphabetic
 		)
 
 		return idx.map((v, i) => i).sort(sorter)
@@ -342,7 +348,7 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 				...gemoji,
 				range: info.ranges[order[i]] as [number, number],
 				matchedName: sc,
-				isInHistory: this.plugin.settings.history.includes(sc),
+				isInHistory: sc in this.plugin.settings.history,
 				matchedBy: 'mystery'
 			}
 			if (gemoji.tags.includes(sc)) extGemoji.matchedBy = 'tag'
