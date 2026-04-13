@@ -31,7 +31,8 @@ const emojiExtraNames: emojiExtraRecord = {
 	arrow_up_small: 'upwards_button',
 	arrow_down_small: 'downwards_button',
 	// non-standard, added for various reasons
-	mag: "magnifying_glass"
+	mag: "magnifying_glass",
+	teeth: "tooth",
 }
 const emojiExtraTags: emojiExtraRecord = {
 	zany_face: ['crazy', 'insane'],
