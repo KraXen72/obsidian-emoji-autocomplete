@@ -56,12 +56,10 @@
   padding-left: 10px;
 }
 
-.EA-sub-setting {
-  padding-left: 2em;
-}
-.EA-sub-setting + .EA-sub-setting {
-  padding-left: 0;
-  margin-left: 2em;
+/* keep nested settings visually grouped under their parent setting */
+.EA-sub-setting .setting-item-info,
+.EA-sub-setting.setting-item-info {
+  margin-inline-start: 2em;
 }
 .EA-setting-details-wrap {
 	line-height: 1.5;
