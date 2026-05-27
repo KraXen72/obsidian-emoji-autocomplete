@@ -4,9 +4,7 @@
   "description": "This plugin suggests emoji when you type a shortcode :smile:",
   "main": "main.js",
   "scripts": {
-    "build:dev": "node esbuild.config.mjs",
-    "watcher": "DEST='/media/win/#blackhole/.obsidian/plugins/obsidian-emoji-autocomplete-dev/' && mkdir -p \"$DEST\" && ls main.js manifest.json styles.css | entr cp main.js manifest.json styles.css \"$DEST\"",
-    "dev": "concurrently --kill-others --names \"build,watch\" -c \"cyan,magenta\" \"pnpm build:dev\" \"pnpm watcher\"",
+    "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "version": "node ./versionbump.mjs && git add manifest.json versions.json",
     "lint": "tsc -noEmit -skipLibCheck && oxlint"
