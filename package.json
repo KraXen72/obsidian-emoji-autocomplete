@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "test": "vitest run",
     "version": "node ./versionbump.mjs && git add manifest.json versions.json",
     "lint": "tsc -noEmit -skipLibCheck && oxlint"
   },
@@ -22,6 +23,7 @@
     "oxlint": "^1.60.0",
     "tslib": "^2.8.1",
     "typescript": "5.5.4",
+    "vitest": "^4.1.7",
     "woff2base64": "^2.0.0"
   },
   "dependencies": {

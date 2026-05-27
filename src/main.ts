@@ -1,11 +1,12 @@
 
 import { Plugin, EditorSuggest, Editor, EditorPosition, TFile, EditorSuggestTriggerInfo, EditorSuggestContext, Notice } from 'obsidian';
-import { gemoji, nameToEmoji, type Gemoji } from 'gemoji'
+import { gemoji, type Gemoji } from 'gemoji'
 import uFuzzy from '@leeoniya/ufuzzy';
 
 import { emojiProcessor } from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
 import { slimHighlight, isEmojiSupported, iconFactory } from './util';
+import { buildEmojiSearchIndex, SearchKind } from './searchIndex';
 
 /** Maps an existing emoji name to new alias name(s) to add */
 export type ExtraNameRecord = Record<string, string | string[]>
@@ -140,11 +141,11 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	settings!: EmojiPluginSettings;
 
 	private emojiList!: Gemoji[];
-	/** current emoji shortcode, tag, etc. haystack */
-	private shortcodeList!: string[];
-	/** set of strings that are ensured to only be tags */
-	private tagSet!: Set<string>;
-	private shortcodeIndexes: Record<string, number> = {}
+	/** current emoji shortcode, tag, etc. haystack passed to uFuzzy */
+	private searchTerms!: string[];
+	private searchEmojiIndexes!: number[];
+	private searchKinds!: SearchKind[];
+	private searchHistoryKeys!: string[];
 
 	async onload() {
 		await this.loadSettings();
@@ -197,10 +198,9 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		this.emojiList = gemoji.map(e => ({ ...e, names: [...e.names], tags: [...e.tags] }))
 
 		this.enrichEmojiList()
-		const shortcodeSet: Set<string> = new Set()
-		const tagSet: Set<string> = new Set()
 		const showNotice = Object.keys(this.settings.emojiSupported).length === 0;
-		this.shortcodeIndexes = {}
+		/** the indexes of emoji in this.emojiList, which are supported */
+		const supportedEmojiIndexes: number[] = []
 
 		for (let i = 0; i < this.emojiList.length; i++) {
 			const emoji = this.emojiList[i]
@@ -220,32 +220,22 @@ export default class EmojiShortcodesPlugin extends Plugin {
 					supported = this.settings.emojiSupported[n];
 				}
 
-				if (!supported) continue;
-				shortcodeSet.add(n)
-				this.shortcodeIndexes[n] = i
+				if (!supported) break;
 			}
-			if (!this.settings.tagSearch || !supported || emoji.tags.length === 0) continue;
-			for (const t of emoji.tags) {
-				if (!(t in nameToEmoji)) tagSet.add(t)
-				if (typeof this.shortcodeIndexes[t] === 'undefined') {
-					shortcodeSet.add(t)
-					this.shortcodeIndexes[t] ??= i
-				}
-			}
+
+			if (supported) supportedEmojiIndexes.push(i)
 		};
-		this.shortcodeList = Array.from(shortcodeSet);
-		this.tagSet = tagSet;
+		const searchEmojiList = supportedEmojiIndexes.map(i => this.emojiList[i])
+		const searchIndex = buildEmojiSearchIndex(searchEmojiList, this.settings.tagSearch)
+
+		this.searchTerms = searchIndex.terms;
+		this.searchEmojiIndexes = searchIndex.emojiIndexes.map(i => supportedEmojiIndexes[i]);
+		this.searchKinds = searchIndex.kinds;
+		this.searchHistoryKeys = searchIndex.historyKeys;
 
 		this.saveData(this.settings);
 		if (showNotice) new Notice(`Re-checked emoji`)
-		console.log(`Updated emoji list: ${this.shortcodeList.length} items, ${tagSet.size} tags.`)
-	}
-
-	indexedGemojiFromShortcode(shortcode: string) {
-		if (!(shortcode in this.shortcodeIndexes)) return null;
-		const index = this.shortcodeIndexes[shortcode]
-		const gemoji = this.emojiList[index]
-		return gemoji ?? null;
+		console.log(`Updated emoji list: ${this.searchTerms.length} items, ${searchIndex.tagCount} tags.`)
 	}
 
 	updateHistory(matchedShortcode: string) {
@@ -256,21 +246,29 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		this.saveSettings(false);
 	}
 
-	/** get the tagSet */
-	get tags() {
-		return this.tagSet as ReadonlySet<string>
-	}
-	/** get the shortcodeList */
+	/** get the search terms passed to uFuzzy */
 	get shortcodes() {
-		return this.shortcodeList as ReadonlyArray<string>
+		return this.searchTerms as ReadonlyArray<string>
+	}
+	get searchEntryEmojiIndexes() {
+		return this.searchEmojiIndexes as ReadonlyArray<number>
+	}
+	get searchEntryKinds() {
+		return this.searchKinds as ReadonlyArray<SearchKind>
+	}
+	get searchEntryHistoryKeys() {
+		return this.searchHistoryKeys as ReadonlyArray<string>
+	}
+	searchEmojiAt(searchIndex: number) {
+		const emojiIndex = this.searchEmojiIndexes[searchIndex]
+		return this.emojiList[emojiIndex] ?? null;
 	}
 }
 
 class EmojiSuggester extends EditorSuggest<Gemoji> {
 	plugin: EmojiShortcodesPlugin;
 	fuzzy: uFuzzy;
-	cmp = new Intl.Collator('en').compare;
-	resultLimit = 18;
+	resultLimit = 12;
 
 	constructor(plugin: EmojiShortcodesPlugin) {
 		super(plugin.app);
@@ -284,27 +282,34 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 	 */
 	typeAheadSort = (info: uFuzzy.Info, haystack: string[], _needle: string) => {
 		const { idx, chars, terms, interLft2, interLft1, start, intraIns, interIns } = info;
+		const searchKinds = this.plugin.searchEntryKinds
+		const searchHistoryKeys = this.plugin.searchEntryHistoryKeys
 		const history = this.plugin.settings.considerHistory
 			? this.plugin.settings.history
 			: {} as Record<string, number>
+		const freq: number[] = []
+		const termLength: number[] = []
 
-		const freq  = (i: number) => history[haystack[idx[i]]] ?? 0
-		const isTag = (i: number) => this.plugin.tags.has(haystack[idx[i]])
-		const shortestSort = (ia: number, ib: number) => haystack[idx[ia]].length - haystack[idx[ib]].length
+		for (let i = 0; i < idx.length; i++) {
+			const searchIndex = idx[i]
+			const term = haystack[searchIndex]
+			freq[i] = history[searchHistoryKeys[searchIndex]] ?? 0
+			termLength[i] = term.length
+		}
 
 		const sorter = (ia: number, ib: number) => (
-			chars[ib] - chars[ia]																				// most contig chars matched
-			|| intraIns[ia] - intraIns[ib]															// least char intra-fuzz (most contiguous)
-			|| start[ia] - start[ib]																		// prefix priority
-			|| Math.log1p(freq(ib)) - Math.log1p(freq(ia))							// more-used emoji rank first
-			|| (isTag(ia) ? 1 : 0) - (isTag(ib) ? 1 : 0)								// name match > tag match
-			|| shortestSort(ia, ib)																			// shorter name as tiebreaker
-			|| (																												// most prefix bounds, boosted by full term matches
+			chars[ib] - chars[ia]												// most contig chars matched
+			|| intraIns[ia] - intraIns[ib]										// least char intra-fuzz (most contiguous)
+			|| start[ia] - start[ib]											// prefix priority
+			|| Math.log1p(freq[ib]) - Math.log1p(freq[ia])						// more-used emoji rank first
+			|| searchKinds[idx[ia]] - searchKinds[idx[ib]]						// primary name > alias > tag
+			|| termLength[ia] - termLength[ib]									// shorter name as tiebreaker
+			|| (																// most prefix bounds, boosted by full term matches
 				(terms[ib] + interLft2[ib] + 0.5 * interLft1[ib]) -
 				(terms[ia] + interLft2[ia] + 0.5 * interLft1[ia])
 			)
-			|| interIns[ia] - interIns[ib]															// highest density of match (least term inter-fuzz)
-			|| this.cmp(haystack[idx[ia]], haystack[idx[ib]])						// alphabetic
+			|| interIns[ia] - interIns[ib]										// highest density of match (least term inter-fuzz)
+			|| idx[ia] - idx[ib]												// stable search-index order
 		)
 
 		return idx.map((v, i) => i).sort(sorter)
@@ -335,24 +340,28 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 
 		const [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodes as string[], emojiQuery);
 		let suggestions: ExtGemoji[] = []
+		const seenEmojiIndexes = new Set<number>()
 
 		// using info.idx here instead of idxs because uf.info() may have
 		// further reduced the initial idxs based on prefix/suffix rules	
 		const idxs2 = info?.idx ?? idxs;
-		for (let i = 0; i < Math.min((order?.length || 0), this.resultLimit); i++) {
+		for (let i = 0; i < (order?.length || 0) && suggestions.length < this.resultLimit; i++) {
 			const index = idxs2[order[i]]
 			const sc = this.plugin.shortcodes[index]
-			const gemoji = this.plugin.indexedGemojiFromShortcode(sc)
+			const gemoji = this.plugin.searchEmojiAt(index)
 			if (!gemoji) continue;
+			const emojiIndex = this.plugin.searchEntryEmojiIndexes[index]
+			if (seenEmojiIndexes.has(emojiIndex)) continue;
+			seenEmojiIndexes.add(emojiIndex)
+
+			const matchedBy = this.plugin.searchEntryKinds[index] === SearchKind.Tag ? 'tag' : 'name'
 			const extGemoji: ExtGemoji = {
 				...gemoji,
 				range: info.ranges[order[i]] as [number, number],
 				matchedName: sc,
-				isInHistory: sc in this.plugin.settings.history,
-				matchedBy: 'mystery'
+				isInHistory: this.plugin.searchEntryHistoryKeys[index] in this.plugin.settings.history,
+				matchedBy,
 			}
-			if (gemoji.tags.includes(sc)) extGemoji.matchedBy = 'tag'
-			else if (gemoji.names.includes(sc)) extGemoji.matchedBy = 'name'
 			suggestions.push(extGemoji)
 		}
 		// console.timeEnd('query') // we get <1 ms query times on 2k emoji, and 1% max sub 7ms
@@ -394,6 +403,6 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		const repl = this.plugin.settings.immediateReplace ? outEm : `:${shortcode}: `;
 
 		this.context.editor.replaceRange(repl, start, end);
-		this.plugin.updateHistory(suggestion.matchedName);
+		this.plugin.updateHistory(shortcode);
 	}
 }
