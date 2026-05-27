@@ -40,7 +40,8 @@ const copyCandidates = ['styles.css', 'main.js', 'manifest.json']
 		dest: path.resolve(pluginFolder, f)
 	}))
 
-if (fs.existsSync(vaultFolder)) {	
+const vaultExists = fs.existsSync(vaultFolder)
+if (vaultExists) {	
 	fs.mkdirSync(pluginFolder, { recursive: true });
 	fs.writeFileSync(hotreloadPath, '', { flag: 'a' }) // no-op if .hotreload exists
 }
@@ -83,6 +84,10 @@ const config = {
 			name: 'copy-to-vault',
 			setup(build) {
 				build.onEnd(r => {
+					if (!vaultExists) {
+						console.log(`vault folder ${vaultFolder} doesn't exist, skipping copy step...`);
+						return;
+					}
 					if (r.errors.length > 0) {
 						console.error(r.errors.join("\n")); 
 						return;
