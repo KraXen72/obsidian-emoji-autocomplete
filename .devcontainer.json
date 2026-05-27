@@ -1,0 +1,28 @@
+{
+	"name":"Fedora Sandbox",
+	"image":"ghcr.io/kraxen72/fedora-toolchain-base:latest",
+	"postCreateCommand":"pnpm add -g typescript npm-check-updates degit repomix @devcontainers/cli",
+	"workspaceMount":"source=${localWorkspaceFolder},target=/home/vscode/workspaces/${localWorkspaceFolderBasename},type=bind,Z",
+	"workspaceFolder":"/home/vscode/workspaces/${localWorkspaceFolderBasename}",
+	"features": {
+		"ghcr.io/kraxen72/devcontainer-features/common-utils-bash-prompt:1": {},
+		"ghcr.io/kraxen72/devcontainer-features/pnpm:1": {},
+		"ghcr.io/kraxen72/devcontainer-features/codex-cli:1": { "version": "latest", "autoUpdate": true },
+		"ghcr.io/kraxen72/devcontainer-features/copilot-cli:1": { "version": "latest", "autoUpdate": true },
+		"ghcr.io/kraxen72/devcontainer-features/ssh-zed:2": {}
+	},
+	"runArgs":[
+		"--name=dcman_${localWorkspaceFolderBasename}",
+		"--publish=127.0.0.1:${localEnv:DCMAN_SSH_PORT}:2222",
+		"--cap-drop=ALL",
+		"--cap-add=SETUID",
+		"--cap-add=SETGID",
+		"--security-opt=no-new-privileges",
+		"--tmpfs=/tmp:exec,mode=1777",
+		"--pids-limit=2048",
+		"--ulimit=nproc=2048:2048",
+		"--ulimit=nofile=65536:65536"
+	],
+	"remoteUser":"vscode",
+	"updateRemoteUserUID":true
+}
