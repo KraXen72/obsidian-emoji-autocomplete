@@ -40,8 +40,10 @@ const copyCandidates = ['styles.css', 'main.js', 'manifest.json']
 		dest: path.resolve(pluginFolder, f)
 	}))
 
-fs.mkdirSync(pluginFolder, { recursive: true });
-fs.writeFileSync(hotreloadPath, '', { flag: 'a' }) // no-op if .hotreload exists
+if (fs.existsSync(vaultFolder)) {	
+	fs.mkdirSync(pluginFolder, { recursive: true });
+	fs.writeFileSync(hotreloadPath, '', { flag: 'a' }) // no-op if .hotreload exists
+}
 
 /** @type {import('esbuild').BuildOptions} */
 const config = {
