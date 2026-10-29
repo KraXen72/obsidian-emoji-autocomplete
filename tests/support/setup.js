@@ -12,6 +12,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+	vi.unstubAllGlobals();
 	document.head.replaceChildren();
 	document.body.replaceChildren();
 });

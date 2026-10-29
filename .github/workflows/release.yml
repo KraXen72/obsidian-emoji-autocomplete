@@ -8,6 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
 
     steps:
       - name: Checkout
@@ -25,13 +29,29 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Test with coverage
         run: pnpm run test:coverage
 
       - name: Build
         run: pnpm run build
+
+      - name: Attest release files
+        id: attest
+        continue-on-error: true
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
+
+      - name: Report unavailable attestations
+        if: steps.attest.outcome == 'failure'
+        run: |
+          echo '::warning::Artifact attestation failed. The release will continue without provenance.'
+          echo 'Artifact attestation failed; release files will be published without provenance.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload plugin files
         uses: actions/upload-artifact@v4
@@ -57,11 +77,6 @@ jobs:
       - name: Download plugin files
         uses: actions/download-artifact@v4
 
-      - name: Create zip archive
-        run: |
-          cd plugin-files
-          zip obsidian-emoji-autocomplete.zip main.js manifest.json styles.css
-
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
@@ -69,5 +84,4 @@ jobs:
             plugin-files/main.js
             plugin-files/manifest.json
             plugin-files/styles.css
-            plugin-files/obsidian-emoji-autocomplete.zip
           generate_release_notes: true

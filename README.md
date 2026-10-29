@@ -53,6 +53,23 @@ when that vault exists. Set `OBSIDIAN_VAULT=/path/to/vault` to use another vault
 or `OBSIDIAN_VAULT=''` to build without copying. Reload Emoji Autocomplete in
 Obsidian after building, or use the Hot Reload plugin with `pnpm dev`.
 
+## Advisory review
+
+Run `pnpm review`, then open `reports/obsidian-review.html` for the official
+[Obsidian ESLint checks](https://github.com/obsidianmd/eslint-plugin).
+All enabled rules are warnings. The review runs separately from tests and builds,
+and installs no commit hooks. Editor ESLint integrations also show these warnings.
+
+On GitHub, open the **Obsidian advisory review** workflow's **Summary** for findings
+linked to source lines. The HTML report is also available as a workflow artifact.
+The job allows failures and is not a dependency of the test or release workflows.
+Some warnings need judgment, particularly sentence-case suggestions for code examples.
+This is a source review; the community directory also checks releases and CSS separately.
+
+New releases contain only `main.js`, `manifest.json`, and `styles.css`.
+The release workflow attempts to attest all three files; an attestation service failure
+is reported without blocking publication. Existing releases are not changed automatically.
+
 ## Support plugin development
 If you find this Plugin helpful, consider it's further development or just say a small thank you
 

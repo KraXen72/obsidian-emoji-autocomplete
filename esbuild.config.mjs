@@ -1,7 +1,7 @@
 import process from "process";
 
 import esbuild from "esbuild";
-import builtins from "builtin-modules";
+import { builtinModules } from "node:module";
 import { replace } from "esbuild-plugin-replace";
 import woff2base64 from "woff2base64";
 
@@ -63,7 +63,8 @@ const config = {
 		"@lezer/common",
 		"@lezer/highlight",
 		"@lezer/lr",
-		...builtins],
+		...builtinModules,
+		"node:*"],
 	format: "cjs",
 	target: "es2018",
 	logLevel: "info",

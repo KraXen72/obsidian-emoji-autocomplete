@@ -25,3 +25,6 @@ repomix-output.xml
 
 # Test coverage reports
 coverage/
+
+# Local advisory review reports
+reports/

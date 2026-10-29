@@ -100,8 +100,8 @@ export function computeHistory(
 	const victim = keys
 		.filter(k => k !== newEntry)
 		.reduce((a, b) => next[a] <= next[b] ? a : b)
-	const { [victim]: _removed, ...trimmed } = next
-	return trimmed
+	delete next[victim]
+	return next
 }
 
 /**
@@ -145,6 +145,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		}));
 	}
 
+	/** Load saved settings, migrate history, and persist any new emoji support results. */
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		// Migrate legacy array-format history to the frequency record format.
@@ -155,26 +156,28 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		}
 		this.updateBodyFont(this.settings.polyfillFlags)
 		this.updateEmojiList()
+		await this.saveData(this.settings);
 	}
 
+	/** Apply requested index and font updates before writing settings once. */
 	async saveSettings(updateEmoji = true, updateFont = false) {
-		await this.saveData(this.settings);
 		if (updateFont) this.updateBodyFont(this.settings.polyfillFlags);
 		if (updateEmoji || updateFont) this.updateEmojiList();
+		await this.saveData(this.settings);
 	}
 
-	private updateBodyFont(value: boolean | 'toggle' = 'toggle') {
-		const propName = "--font-text-override"
-		const polyfillFont = "EmojiAutocompleteFlagPolyfill"
-		let prev = document.body.style.getPropertyValue(propName).split(",").map(f => f.trim()) ?? []
-		prev = prev.filter(f => !(f === "??" || f === ""))
+	private updateBodyFont(enabled: boolean) {
+		const fontProperty = '--font-text-override';
+		const flagFont = 'EmojiAutocompleteFlagPolyfill';
+		const bodyStyle = activeDocument.body.style;
+		const fonts = bodyStyle.getPropertyValue(fontProperty)
+			.split(',')
+			.map(font => font.trim())
+			.filter(font => font !== '' && font !== '??' && font !== flagFont);
 
-		if (prev[0] === polyfillFont) {
-			if (value === 'toggle' || value === false) prev.shift();
-		} else {
-			if (value === 'toggle' || value === true) prev.unshift(polyfillFont);
-		}
-		document.body.style.setProperty(propName, prev.join(", "))
+		if (enabled) fonts.unshift(flagFont);
+
+		bodyStyle.setProperty(fontProperty, fonts.join(', '));
 	}
 
 	private enrichEmojiList() {
@@ -225,7 +228,6 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		this.shortcodeList = Array.from(shortcodeSet);
 		this.tagSet = tagSet;
 
-		this.saveData(this.settings);
 		if (showNotice) new Notice(`Re-checked emoji`)
 		console.log(`Updated emoji list: ${this.shortcodeList.length} items, ${tagSet.size} tags.`)
 	}
@@ -244,12 +246,16 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		return gemoji ?? null;
 	}
 
+	/** Record a selection without blocking the editor on settings persistence. */
 	updateHistory(matchedShortcode: string) {
 		if (!this.settings.considerHistory) return;
 		this.settings = Object.assign(this.settings, {
 			history: computeHistory(this.settings.history, matchedShortcode, this.settings.historyLimit)
 		});
-		this.saveSettings(false);
+		this.saveSettings(false).catch((error: unknown) => {
+			console.error('Could not save emoji history.', error);
+			new Notice('Could not save emoji history.');
+		});
 	}
 
 	/** get the tagSet */
@@ -265,7 +271,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 class EmojiSuggester extends EditorSuggest<EmojiSuggestion> {
 	plugin: EmojiShortcodesPlugin;
 	fuzzy: uFuzzy;
-	cmp = new Intl.Collator('en').compare;
+	collator = new Intl.Collator('en');
 	resultLimit = 18;
 
 	constructor(plugin: EmojiShortcodesPlugin) {
@@ -300,7 +306,7 @@ class EmojiSuggester extends EditorSuggest<EmojiSuggestion> {
 				(terms[ia] + interLft2[ia] + 0.5 * interLft1[ia])
 			)
 			|| interIns[ia] - interIns[ib]															// highest density of match (least term inter-fuzz)
-			|| this.cmp(haystack[idx[ia]], haystack[idx[ib]])						// alphabetic
+			|| this.collator.compare(haystack[idx[ia]], haystack[idx[ib]])		// alphabetic
 		)
 
 		return idx.map((v, i) => i).sort(sorter)

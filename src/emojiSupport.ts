@@ -2,19 +2,19 @@ const FONT_SIZE = 32;
 const CANVAS_SIZE = FONT_SIZE * 2;
 const MAX_EMOJI_WIDTH = FONT_SIZE * 1.5;
 
-/** Resolve Obsidian's text and interface stacks, including theme and user overrides. */
+/** Resolve the active window's text and interface stacks, including theme and user overrides. */
 export function getEmojiFontStacks(): string[] {
-	const probe = document.createElement('span');
+	const probe = activeDocument.createElement('span');
 	probe.style.position = 'absolute';
 	probe.style.visibility = 'hidden';
-	document.body.appendChild(probe);
+	activeDocument.body.appendChild(probe);
 
 	try {
 		probe.className = 'EA-emoji';
-		const textFontStack = getComputedStyle(probe).fontFamily;
+		const textFontStack = activeWindow.getComputedStyle(probe).fontFamily;
 		probe.className = '';
 		probe.style.fontFamily = 'var(--font-interface)';
-		const interfaceFontStack = getComputedStyle(probe).fontFamily;
+		const interfaceFontStack = activeWindow.getComputedStyle(probe).fontFamily;
 
 		return [...new Set([textFontStack, interfaceFontStack])];
 	} finally {
@@ -27,7 +27,7 @@ export function getEmojiFontStacks(): string[] {
  * Width is a heuristic for detecting sequences rendered as separate glyphs.
  */
 export function createEmojiSupportChecker(fontStacks: readonly string[]): (emoji: string) => boolean {
-	const canvas = document.createElement('canvas');
+	const canvas = activeDocument.createElement('canvas');
 	canvas.width = CANVAS_SIZE;
 	canvas.height = CANVAS_SIZE;
 	const context = canvas.getContext('2d', { willReadFrequently: true });
