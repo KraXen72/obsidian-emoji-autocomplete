@@ -99,15 +99,15 @@ describe('font-stack selection', () => {
 		// jsdom cannot resolve Obsidian's font variables; control only that browser boundary.
 		vi.spyOn(window, 'getComputedStyle').mockImplementation(probe => {
 			probes.push({ className: probe.className, fontFamily: probe.style.fontFamily, connected: probe.isConnected });
-			return { fontFamily: probe.className === 'EA-emoji' ? 'Inter, Twemoji Windows' : 'Interface, Twemoji Windows' };
+			return { fontFamily: probe.classList.contains('EA-emoji') ? 'Inter, Twemoji Windows' : 'Interface, Twemoji Windows' };
 		});
 
 		const stacks = getEmojiFontStacks();
 
 		expect(stacks).toEqual(['Inter, Twemoji Windows', 'Interface, Twemoji Windows']);
 		expect(probes).toEqual([
-			{ className: 'EA-emoji', fontFamily: '', connected: true },
-			{ className: '', fontFamily: 'var(--font-interface)', connected: true },
+			{ className: 'EA-font-probe EA-emoji', fontFamily: '', connected: true },
+			{ className: 'EA-font-probe EA-interface-font-probe', fontFamily: '', connected: true },
 		]);
 		expect(document.body.childElementCount).toBe(0);
 	});

@@ -9,6 +9,17 @@ describe('settings persistence', () => {
 		({ plugin } = await startPlugin());
 	});
 
+	it.each([null, 'invalid', 42, []])('loads defaults when saved settings are not an object: %j', async saved => {
+		vi.spyOn(plugin, 'loadData').mockResolvedValue(saved);
+		installCanvas();
+
+		await plugin.loadSettings();
+
+		expect(plugin.settings.suggester).toBe(true);
+		expect(plugin.settings.historyLimit).toBe(25);
+		expect(Array.isArray(plugin.settings.history)).toBe(false);
+	});
+
 	it('writes settings once after filling missing support-cache entries', async () => {
 		delete plugin.settings.emojiSupported.one;
 		installCanvas();

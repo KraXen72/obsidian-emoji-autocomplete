@@ -147,7 +147,11 @@ export default class EmojiShortcodesPlugin extends Plugin {
 
 	/** Load saved settings, migrate history, and persist any new emoji support results. */
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const savedSettings: unknown = await this.loadData();
+		this.settings = { ...DEFAULT_SETTINGS };
+		if (savedSettings !== null && typeof savedSettings === 'object' && !Array.isArray(savedSettings)) {
+			Object.assign(this.settings, savedSettings);
+		}
 		// Migrate legacy array-format history to the frequency record format.
 		// Old format: string[] (most-recent first). New format: Record<string, number>.
 		if (Array.isArray(this.settings.history)) {
@@ -229,7 +233,6 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		this.tagSet = tagSet;
 
 		if (showNotice) new Notice(`Re-checked emoji`)
-		console.log(`Updated emoji list: ${this.shortcodeList.length} items, ${tagSet.size} tags.`)
 	}
 
 	/** Request text presentation for ©, ®, and ™ without changing other emoji sequences. */

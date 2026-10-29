@@ -22,8 +22,7 @@
   align-items: center;
 }
 
-.EA-shortcode svg,
-.EA-setting-details-wrap svg {
+.EA-shortcode svg {
 	opacity: 0.6;
 	margin-left: 0.25rem;
 }
@@ -56,29 +55,42 @@
   padding-left: 10px;
 }
 
-/* keep nested settings visually grouped under their parent setting */
-.EA-sub-setting .setting-item-info,
-.EA-sub-setting.setting-item-info {
+/* Indent child labels while keeping their controls aligned with the parent. */
+.EA-sub-setting .setting-item-info {
   margin-inline-start: 2em;
 }
-.EA-setting-details-wrap {
-	line-height: 1.5;
+
+.EA-sub-setting.setting-item {
+  padding-block: 10px;
 }
 
-.EA-setting-gridholder {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	align-items: end;
-	justify-items: end;
-
-	row-gap: 1.25rem;
-	padding-top: 1rem;
-	padding-bottom: 1rem;
+.EA-history-limit input {
+  width: 5rem;
 }
 
-.EA-donate {
-	display: flex;
-	gap: 0.5rem;
-	height: min-content;
+.EA-settings-heading.setting-item {
+  margin-block: 12px 0;
+  padding-block: 10px;
 }
 
+.EA-no-desc-setting.setting-item {
+  align-items: center;
+}
+
+.EA-no-desc-setting .setting-item-name {
+  margin-block: 0;
+}
+
+.EA-no-desc-setting .setting-item-description {
+  display: none;
+}
+
+/* Measure font stacks without displaying the temporary probe. */
+.EA-font-probe {
+  position: absolute;
+  visibility: hidden;
+}
+
+.EA-interface-font-probe {
+  font-family: var(--font-interface);
+}

@@ -1,5 +1,5 @@
 
-import { PluginSettingTab, App, Setting, Notice } from "obsidian";
+import { PluginSettingTab, App, Setting, Notice, type SettingDefinitionRender } from "obsidian";
 import EmojiShortcodesPlugin from "./main";
 
 const repoURL = `https://github.com/KraXen72/obsidian-emoji-autocomplete`
@@ -40,6 +40,11 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	polyfillFlags: false,
 }
 
+// The legacy renderer has no SettingGroup to pass to render callbacks.
+type EmojiSettingDefinition = Omit<SettingDefinitionRender, 'render'> & {
+	render: (setting: Setting) => void;
+};
+
 export class EmojiPluginSettingTab extends PluginSettingTab {
 	plugin: EmojiShortcodesPlugin;
 
@@ -48,127 +53,173 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+	/** Render the shared definitions on Obsidian versions before 1.13. */
 	display(): void {
-		let { containerEl } = this;
+		/* eslint-disable obsidianmd/no-unsupported-api -- these definitions are plugin-owned data; reading them does not require the new host API. */
+		this.containerEl.empty();
+		for (const definition of this.getSettingDefinitions()) {
+			const visible = typeof definition.visible === 'function'
+				? definition.visible()
+				: definition.visible !== false;
+			if (!visible) continue;
 
-		containerEl.empty();
+			const setting = new Setting(this.containerEl).setName(definition.name);
+			if (definition.desc) setting.setDesc(definition.desc);
+			definition.render(setting);
+		}
+		/* eslint-enable obsidianmd/no-unsupported-api -- resume host API version checks. */
+	}
 
-		new Setting(containerEl)
-			.setName('Emoji Autocomplete')
-			.setDesc('Emoji autocomplete will appear everytime you type : followed by a letter. This will help you insert emojis. (Might not work on mobile)')
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.suggester)
-					.onChange(async value => {
-						this.plugin.settings.suggester = value;
-						await this.plugin.saveSettings();
-					})
-			});
+	/** Refresh through the declarative API when available, or the legacy renderer. */
+	private refresh(): void {
+		// eslint-disable-next-line obsidianmd/no-unsupported-api -- call the new API only when the host provides it.
+		if (typeof this.update === 'function') this.update();
+		// eslint-disable-next-line @typescript-eslint/no-deprecated -- older hosts require the legacy renderer.
+		else this.display();
+	}
+
+	/** Describe searchable settings while retaining the save handlers and their side effects. */
+	getSettingDefinitions(): EmojiSettingDefinition[] {
+		const definitions: EmojiSettingDefinition[] = [];
+
+		definitions.push({
+			name: 'Emoji Autocomplete',
+			desc: 'Emoji autocomplete will appear everytime you type : followed by a letter. This will help you insert emojis. (Might not work on mobile)',
+			render: setting => {
+				setting.addToggle(cb => {
+					cb.setValue(this.plugin.settings.suggester)
+						.onChange(async value => {
+							this.plugin.settings.suggester = value;
+							await this.plugin.saveSettings();
+						})
+				});
+			},
+		});
 
 		const triggerFirstFrag = new DocumentFragment()
-		const triggerFirstW = triggerFirstFrag.createEl("div", { cls: 'markdown-rendered' })
+		const triggerFirstW = triggerFirstFrag.createDiv( { cls: 'markdown-rendered' })
 		triggerFirstW.appendText(`If this is off, don't trigger on `)
-		triggerFirstW.createEl('code').setText(`:3`)
+		triggerFirstW.createEl('code').appendText(`:3`)
 		triggerFirstW.appendText(' or ')
-		triggerFirstW.createEl('code').setText(`:D`)
+		triggerFirstW.createEl('code').appendText(`:D`)
 		triggerFirstW.appendText(' but trigger on ')
-		triggerFirstW.createEl('code').setText(`:Do`)
+		triggerFirstW.createEl('code').appendText(`:Do`)
 		triggerFirstW.appendText(', ')
-		triggerFirstW.createEl('code').setText(`:Dog`)
+		triggerFirstW.createEl('code').appendText(`:Dog`)
 		triggerFirstW.appendText(' etc.')
-	
-		new Setting(containerEl)
-			.setName('Trigger from first character')
-			.setDesc(triggerFirstFrag)
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.triggerFromFirst)
-					.onChange(async value => {
-						this.plugin.settings.triggerFromFirst = value;
-						await this.plugin.saveSettings();
-					})
-			});
+
+		definitions.push({
+			name: 'Trigger from first character',
+			desc: triggerFirstFrag,
+			render: setting => {
+				setting.addToggle(cb => {
+					cb.setValue(this.plugin.settings.triggerFromFirst)
+						.onChange(async value => {
+							this.plugin.settings.triggerFromFirst = value;
+							await this.plugin.saveSettings();
+						})
+				});
+			},
+		});
 
 		const triggerDescFrag = new DocumentFragment()
 		const triggerDescW = triggerDescFrag.createEl('details')
 		triggerDescW.createEl('summary').setText('Disable this if autocomplete is sometimes not triggering when it should.')
 		triggerDescW.appendText('With this setting on, the following will apply:')
-		const triggerDescWUl = triggerDescW.createEl("ul", { cls: 'EA-setting-details-wrap' })
+		const triggerDescWUl = triggerDescW.createEl("ul")
 		const dataviewMetaLi = triggerDescWUl.createEl("li", { cls: 'markdown-rendered' })
 		dataviewMetaLi.appendText("Don't trigger on dataview inline fields: ")
-		dataviewMetaLi.createEl('code').setText(`key::value`)
+		dataviewMetaLi.createEl('code').appendText(`key::value`)
 
 		const hhmmssLi = triggerDescWUl.createEl("li", { cls: 'markdown-rendered' })
 		hhmmssLi.appendText("Don't trigger on ")
-		hhmmssLi.createEl('code').setText(`HH:MM`)
+		hhmmssLi.createEl('code').appendText(`HH:MM`)
 		hhmmssLi.appendText(" or ")
-		hhmmssLi.createEl('code').setText(`HH:MM:SS`)
+		hhmmssLi.createEl('code').appendText(`HH:MM:SS`)
 		hhmmssLi.appendText(" dates.")
 
-		new Setting(containerEl)
-			.setName('Stricter autocomplete trigger')
-			.setDesc(triggerDescFrag)
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.strictTrigger)
-					.onChange(async value => {
-						this.plugin.settings.strictTrigger = value;
-						await this.plugin.saveSettings();
-					})
-			});
+		definitions.push({
+			name: 'Stricter autocomplete trigger',
+			desc: triggerDescFrag,
+			render: setting => {
+				setting.addToggle(cb => {
+					cb.setValue(this.plugin.settings.strictTrigger)
+						.onChange(async value => {
+							this.plugin.settings.strictTrigger = value;
+							await this.plugin.saveSettings();
+						})
+				});
+			},
+		});
 
-		new Setting(containerEl)
-			.setName('Highlight matched part of suggestion')
-			.setDesc('Highlight the part of the suggestion that is matched in accent color.')
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.highlightMatches)
-					.onChange(async value => {
-						this.plugin.settings.highlightMatches = value;
-						await this.plugin.saveSettings();
-					})
-			});
-		
-		new Setting(containerEl)
-			.setName('Suggest emoji by tags')
-			.setDesc('E.g. Searching for \'shuffle\' will find 🔀 (twisted_rightwards_arrow). Tags may sometimes be vague or unintuitive.')
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.tagSearch)
-					.onChange(async value => {
-						this.plugin.settings.tagSearch = value;
-						await this.plugin.saveSettings();
-						this.display();
-					})
-			});
+		definitions.push({
+			name: 'Highlight matched part of suggestion',
+			desc: 'Highlight the part of the suggestion that is matched in accent color.',
+			render: setting => {
+				setting.addToggle(cb => {
+					cb.setValue(this.plugin.settings.highlightMatches)
+						.onChange(async value => {
+							this.plugin.settings.highlightMatches = value;
+							await this.plugin.saveSettings();
+						})
+				});
+			},
+		});
 
-		if (this.plugin.settings.tagSearch) {
-			new Setting(containerEl)
-				.setName('Show shortcode on tag results')
-				.setDesc('When an emoji is matched by it\'s tag, show the shortcode next to it. Helps you learn the proper shortcodes. When disabled, looks cleaner.')
-				.setClass('EA-sub-setting')
-				.addToggle(cb => {
+		definitions.push({
+			name: 'Suggest emoji by tags',
+			desc: 'E.g. Searching for \'shuffle\' will find 🔀 (twisted_rightwards_arrow). Tags may sometimes be vague or unintuitive.',
+			render: setting => {
+				setting.addToggle(cb => {
+					cb.setValue(this.plugin.settings.tagSearch)
+						.onChange(async value => {
+							this.plugin.settings.tagSearch = value;
+							await this.plugin.saveSettings();
+							this.refresh();
+						})
+				});
+			},
+		});
+
+		definitions.push({
+			visible: () => this.plugin.settings.tagSearch,
+			name: 'Show shortcode on tag results',
+			desc: 'When an emoji is matched by it\'s tag, show the shortcode next to it. Helps you learn the proper shortcodes. When disabled, looks cleaner.',
+			render: setting => {
+				setting.setClass('EA-sub-setting');
+				setting.addToggle(cb => {
 					cb.setValue(this.plugin.settings.tagShowShortcode)
 						.onChange(async value => {
 							this.plugin.settings.tagShowShortcode = value;
 							await this.plugin.saveSettings();
 						})
 				});
-		}
-	
+			},
+		});
 
-		new Setting(containerEl)
-			.setName('Suggest recenly used emoji')
-			.setDesc('Suggester will boost recently used emoji')
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.considerHistory)
-					.onChange(async value => {
-						this.plugin.settings.considerHistory = value;
-						await this.plugin.saveSettings();
-						this.display();
-					})
-			});
+		definitions.push({
+			name: 'Suggest recently used emoji',
+			desc: 'Prioritize emoji you use frequently.',
+			render: setting => {
+				setting.addToggle(cb => {
+					cb.setValue(this.plugin.settings.considerHistory)
+						.onChange(async value => {
+							this.plugin.settings.considerHistory = value;
+							await this.plugin.saveSettings();
+							this.refresh();
+						})
+				});
+			},
+		});
 
-		if (this.plugin.settings.considerHistory) {
-			new Setting(containerEl)
-				.setName('History Limit')
-				.setClass('EA-sub-setting')
-				.addText(cb => {
+		definitions.push({
+			visible: () => this.plugin.settings.considerHistory,
+			name: 'History limit',
+			aliases: ['Clear history'],
+			desc: `${Object.keys(this.plugin.settings.history).length} emoji remembered (maximum 100).`,
+			render: setting => {
+				setting.setClass('EA-sub-setting EA-history-limit');
+				setting.addText(cb => {
 					cb.setPlaceholder(`default: ${DEFAULT_SETTINGS.historyLimit}, max: 100`)
 						.setValue(String(this.plugin.settings.historyLimit))
 						.onChange(async value => {
@@ -178,139 +229,162 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 						})
 				});
-
-			new Setting(containerEl)
-				.setName(`Clear History (${Object.keys(this.plugin.settings.history).length} items)`)
-				.setClass('EA-sub-setting')
-				.addButton(cb => {
+				setting.addButton(cb => {
 					cb.setButtonText("Clear")
 						.onClick(async () => {
 							this.plugin.settings.history = {};
 							await this.plugin.saveSettings();
 							new Notice(`Cleared history`)
-							this.display()
+							this.refresh()
 						})
 				});
-		}
+			},
+		});
 
-		
+		definitions.push({
+			name: 'Supported emoji',
+			searchable: false,
+			render: setting => { setting.setHeading().setClass('EA-settings-heading'); },
+		});
 
-		new Setting(containerEl).setName('Supported emoji').setHeading()
+		definitions.push({
+			name: 'Hide unsupported emoji',
+			desc: 'Unsupported emoji will not be suggested in the picker',
+			render: setting => {
+				setting.addToggle(cb => {
+					cb.setValue(this.plugin.settings.hideUnsupported)
+						.onChange(async value => {
+							this.plugin.settings.hideUnsupported = value;
+							await this.plugin.saveSettings();
+						})
+				});
+			},
+		});
 
-		new Setting(containerEl)
-			.setName('Hide unsupported emoji')
-			.setDesc('Unsupported emoji will not be suggested in the picker')
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.hideUnsupported)
-					.onChange(async value => {
-						this.plugin.settings.hideUnsupported = value;
-						await this.plugin.saveSettings();
-					})
-			});
+		definitions.push({
+			name: 'Re-check emoji support',
+			desc: 'Check again after changing your text or interface font.',
+			render: setting => {
+				setting.setClass('EA-sub-setting');
+				setting.addButton(cb => {
+					cb.setButtonText("Re-check")
+						.onClick(async () => {
+							this.plugin.settings.emojiSupported = {};
+							await this.plugin.saveSettings(true);
+						})
+				});
+			},
+		});
 
-		new Setting(containerEl)
-			.setName('Re-check emoji support')
-			.setDesc('Test emoji with your selected text and interface fonts. Re-check after changing fonts.')
-			.setClass('EA-sub-setting')
-			.addButton(cb => {
-				cb.setButtonText("Clear & Re-check")
-					.onClick(async () => {
-						this.plugin.settings.emojiSupported = {};
-						await this.plugin.saveSettings(true);
-					})
-			});
-		
-		new Setting(containerEl).setName('Other').setHeading()
+		definitions.push({
+			name: 'Other',
+			searchable: false,
+			render: setting => { setting.setHeading().setClass('EA-settings-heading'); },
+		});
 
-		new Setting(containerEl)
-			.setName('Immediate Emoji Replace')
-			.setDesc('If this is turned on, upon submitting a completion, an emoji will be immediately inserted. Otherwise, a shortcode will be inserted and you only see the emoji in Preview Mode.')
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.immediateReplace)
-					.onChange(async value => {
-						this.plugin.settings.immediateReplace = value;
-						await this.plugin.saveSettings(false);
-					})
-			});
+		definitions.push({
+			name: 'Immediate Emoji Replace',
+			desc: 'If this is turned on, upon submitting a completion, an emoji will be immediately inserted. Otherwise, a shortcode will be inserted and you only see the emoji in Preview Mode.',
+			render: setting => {
+				setting.addToggle(cb => {
+					cb.setValue(this.plugin.settings.immediateReplace)
+						.onChange(async value => {
+							this.plugin.settings.immediateReplace = value;
+							await this.plugin.saveSettings(false);
+						})
+				});
+			},
+		});
 
-
-		new Setting(containerEl)
-			.setName('Use text style for ©, ®, and ™')
-			.setDesc('Use text presentation instead of emoji presentation when inserting these symbols or rendering their shortcodes.')
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.preferTextSymbols)
-					.onChange(async value => {
-						this.plugin.settings.preferTextSymbols = value;
-						await this.plugin.saveSettings();
-					})
-			});
+		definitions.push({
+			name: 'Use text style for ©, ®, and ™',
+			desc: 'Use text presentation instead of emoji presentation when inserting these symbols or rendering their shortcodes.',
+			render: setting => {
+				setting.addToggle(cb => {
+					cb.setValue(this.plugin.settings.preferTextSymbols)
+						.onChange(async value => {
+							this.plugin.settings.preferTextSymbols = value;
+							await this.plugin.saveSettings();
+						})
+				});
+			},
+		});
 
 		const latinFrag = new DocumentFragment()
 		const latinDescW = latinFrag.createDiv({ cls: 'markdown-rendered' })
 		latinDescW.appendText('If this is turned on, searching for ')
-		latinDescW.createEl('code').setText(`:štár`)
+		latinDescW.createEl('code').appendText(`:štár`)
 		latinDescW.appendText(' will find the same results as ')
-		latinDescW.createEl('code').setText(`:star`)
+		latinDescW.createEl('code').appendText(`:star`)
 
-		new Setting(containerEl)
-			.setName('Remove diacritics')
-			.setDesc(latinFrag)
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.latinize)
-					.onChange(async value => {
-						this.plugin.settings.latinize = value;
-						await this.plugin.saveSettings(false);
-					})
-			});
+		definitions.push({
+			name: 'Remove diacritics',
+			desc: latinFrag,
+			render: setting => {
+				setting.addToggle(cb => {
+					cb.setValue(this.plugin.settings.latinize)
+						.onChange(async value => {
+							this.plugin.settings.latinize = value;
+							await this.plugin.saveSettings(false);
+						})
+				});
+			},
+		});
 
 		const bflagFrag = new DocumentFragment()
-		const flagFragW = bflagFrag.createDiv({ cls: 'EA-setting-details-wrap' })
+		const flagFragW = bflagFrag.createDiv()
 		flagFragW.createEl('strong').setText('Replaces all flag emoji with a custom font')
 		flagFragW.createEl('br')
 		const bflagDet = flagFragW.createEl('details')
 		bflagDet.createEl('summary').setText('Windows 10 is known to have bad flag emoji, this fixes it. More info:')
 		const bflagUl = bflagDet.createEl('ul')
 		bflagUl.createEl('li').setText('Might break some themes or other plugins!')
-		bflagUl.createEl('li', { title: 'The plugin tries to modify the --font-text-override css variable on the body' })
-			.setText('If glitched, reload obsidian or change the Text Font in Appearance')
+		bflagUl.createEl('li', { title: 'The plugin tries to modify the --font-text-override CSS variable on the body' })
+			.setText('If glitched, reload Obsidian or change the text font in appearance')
 		bflagDet.createEl('strong').setText('Please report any bugs on ')
-		bflagDet.querySelector('strong').createEl('a', { href: `${repoURL}/issues` }).setText('github')
+		bflagDet.querySelector('strong').createEl('a', { href: `${repoURL}/issues` }).setText('GitHub')
 
-		new Setting(containerEl)
-			.setName('Better flag emoji (Experimental)')
-			.setDesc(bflagFrag)
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.polyfillFlags)
-					.onChange(async value => {
-						this.plugin.settings.polyfillFlags = value;
-						await this.plugin.saveSettings(false, true);
-					})
-			});
+		definitions.push({
+			name: 'Better flag emoji (Experimental)',
+			desc: bflagFrag,
+			render: setting => {
+				setting.addToggle(cb => {
+					cb.setValue(this.plugin.settings.polyfillFlags)
+						.onChange(async value => {
+							this.plugin.settings.polyfillFlags = value;
+							await this.plugin.saveSettings(false, true);
+						})
+				});
+			},
+		});
 
-			new Setting(containerEl).setName('Donate').setHeading()
+		definitions.push({
+			name: 'Donate',
+			searchable: false,
+			render: setting => { setting.setHeading().setClass('EA-settings-heading'); },
+		});
 
-		const donateFragment = new DocumentFragment()
-		donateFragment.createDiv({ text: 'If you like this Plugin, consider donating to support continued development', cls: "setting-item-description" })
-		const gridHolder = donateFragment.createDiv({ cls: "EA-setting-gridholder" })
+		definitions.push({
+			name: 'Support KraXen72',
+			desc: 'Creator of Emoji Autocomplete and its additional features.',
+			searchable: false,
+			render: setting => {
+				setting.addButton(button => button
+					.setButtonText('Liberapay')
+					.onClick(() => { window.open('https://liberapay.com/KraXen72'); }));
+				setting.addButton(button => button
+					.setButtonText('Ko-fi')
+					.onClick(() => { window.open('https://ko-fi.com/kraxen72'); }));
+			},
+		});
 
-		const author1 = gridHolder.createDiv()
-		author1.createDiv({ text: 'Support KraXen72', cls: 'setting-item-name' })
-		author1.createDiv({ text: 'Creator of Emoji Autocomplete and all the features on top of Emoji Shortcodes', cls: 'setting-item-description' })
-		const KraXenDonateHolder = gridHolder.createDiv({ cls: 'EA-donate' })
-		KraXenDonateHolder.createEl('a', { href: 'https://liberapay.com/KraXen72', title: 'Support KraXen72 on LiberaPay' })
-			.createEl('img', { attr: { src: 'https://liberapay.com/assets/widgets/donate.svg', height: 32 } })
-		KraXenDonateHolder.createEl('a', { href: 'https://ko-fi.com/kraxen72', title: 'Support KraXen72 on ko-fi' })
-			.createEl('img', { attr: { src: 'https://ko-fi.com/img/githubbutton_sm.svg', height: 32 } })
-
-		const author2 = gridHolder.createDiv()
-		author2.createDiv({ text: 'Support phibr0', cls: 'setting-item-name' })
-		author2.createDiv({ text: 'Creator of Emoji Shortcodes, the plugin Emoji Autocomplete was initially based on', cls: 'setting-item-description' })
-		gridHolder
-			.createDiv({ cls: 'EA-donate' })
-			.createEl('a', { href: 'https://ko-fi.com/phibr0', title: '"Support phibr0 on ko-fi' })
-			.createEl('img', { attr: { src: 'https://ko-fi.com/img/githubbutton_sm.svg', height: 32 } })
-		
-		containerEl.appendChild(donateFragment)
-		
+		return definitions.map(definition => ({
+			...definition,
+			render: setting => {
+				// eslint-disable-next-line obsidianmd/no-unsupported-api -- desc is plugin-owned metadata, available on both rendering paths.
+				if (!definition.desc) setting.setClass('EA-no-desc-setting');
+				definition.render(setting);
+			},
+		}));
 	}
 }
