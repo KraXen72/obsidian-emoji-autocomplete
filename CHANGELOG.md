@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.1 - 2026-10-29
+
+- Migrate to Obsidian's declarative settings API so plugin settings can appear in settings search on Obsidian 1.13 and later.
+- Keep the legacy settings renderer for older Obsidian versions, with shared definitions and save handlers for both rendering paths.
+- Refresh dependent controls through the active settings renderer when changing tag search or history options.
+- Improve settings spacing, headings, and history controls; place the clear-history button beside the history limit.
+- Use defaults when saved plugin data is not a settings object.
+- Move font-probe styles into CSS and remove routine emoji-index logging.
+- Expand regression coverage for both settings renderers and saved-data loading.
+
 ## 1.6.0 - 2026-10-29
 
 ### Added
