@@ -5,9 +5,11 @@
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
+    "build:dev": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs --once",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "version": "node ./versionbump.mjs && git add manifest.json versions.json",
-    "lint": "tsc -noEmit -skipLibCheck && oxlint"
+    "lint": "tsc -noEmit -skipLibCheck && oxlint",
+    "test": "node --test tests/*.test.mjs"
   },
   "keywords": [],
   "author": "",

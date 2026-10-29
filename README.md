@@ -15,6 +15,7 @@
   - Show original shortcode inline when an emoji is found by tag (optional)
 - **Hide OS unsupported emoji** (optional)
 - **Immediately replace emoji** / keep as shortcode & show in preview mode
+- **Use text style for ©, ®, and ™** (enabled by default; optional)
 - **Remove diacritics** when searching for an emoji (optional)
 - **Replace flag emoji** with nicer font (optional)
 - **Improved performance over [Emoji Shortcodes](https://github.com/phibr0/obsidian-emoji-shortcodes)** - [more information](#performance-improvements)
@@ -46,6 +47,12 @@
 3. `npm run dev` or `pnpm dev` (ideal)
 4. Turn the plugin on inside of Obsidian
 
+For a one-off development build, run `pnpm build:dev`. Both development commands
+copy the plugin into `/mnt/c/Blackhole` (WSL) or `/media/win/#blackhole` (Linux),
+when that vault exists. Set `OBSIDIAN_VAULT=/path/to/vault` to use another vault,
+or `OBSIDIAN_VAULT=''` to build without copying. Reload Emoji Autocomplete in
+Obsidian after building, or use the Hot Reload plugin with `pnpm dev`.
+
 ## Support plugin development
 If you find this Plugin helpful, consider it's further development or just say a small thank you
 
@@ -70,4 +77,10 @@ libraries / packages that were used but modified or otherwise embedded (not in p
 Emoji shortcodes has an issue where it slows down the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) and [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugins by a huge amount.  
 (You can check the progress on the issue in in [this issue](https://github.com/phibr0/obsidian-emoji-shortcodes/issues/47))  
 ![speed comparison](./screenshots/speed_comparison.png)  
-*credit: @claremacrae 03/2024*  
+*credit: @claremacrae 03/2024*
+
+Shortcode rendering uses `textContent` to avoid forced layout, indexed emoji lookups, and one pass through the DOM. Unchanged text nodes are left untouched. Run `pnpm test` to check these performance safeguards, cached font detection, and the suggestion result limit; release builds run these tests too.
+
+## Twemoji Windows font
+
+[Twemoji Windows](https://gitlab.com/minecraftpiston/twemoji-ttf-windows) provides a font with fixes for keycaps and combined emoji in Windows/Chromium apps. Install the TTF from its [latest release](https://gitlab.com/minecraftpiston/twemoji-ttf-windows/-/releases/permalink/latest), add **Twemoji Windows** after your text font in Obsidian, then use **Clear & Re-check** in this plugin's settings.

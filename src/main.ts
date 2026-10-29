@@ -5,22 +5,18 @@ import uFuzzy from '@leeoniya/ufuzzy';
 
 import { emojiProcessor } from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
-import { slimHighlight, isEmojiSupported, iconFactory } from './util';
+import { slimHighlight, iconFactory } from './util';
+import { createEmojiSupportChecker, getEmojiFontStacks } from './emojiSupport';
 
 /** Maps an existing emoji name to new alias name(s) to add */
 export type ExtraNameRecord = Record<string, string | string[]>
 /** Maps an existing emoji name to new tag(s) to add */
 export type ExtraTagRecord = Record<string, string | string[]>
 
-/** some emoji are only partially supported
- * - linux: we can add them without issue
- * - windows: we can add them, but we slice off the other characters that don't get rendered. 
- */
-const partiallySupported = ['relaxed', 'tm', 'registered', 'copyright', 'm']
-
-// add some extra names & tags to emoji
+/** Additional shortcode aliases, keyed by an existing gemoji name. */
 export const emojiExtraNames: ExtraNameRecord = {
 	large_blue_circle: 'blue_circle',
+	heavy_minus_sign: 'minus',
 	x: 'cross_mark',
 	cupid: 'heart_with_arrow',
 	gift_heart: 'heart_with_ribbon',
@@ -39,6 +35,7 @@ export const emojiExtraNames: ExtraNameRecord = {
 	mag: "magnifying_glass",
 	tooth: 'teeth',
 }
+/** Additional search tags, keyed by an existing gemoji name. */
 export const emojiExtraTags: ExtraTagRecord = {
 	zany_face: ['crazy', 'insane'],
 	japanese_ogre: 'oni',
@@ -108,32 +105,22 @@ export function computeHistory(
 }
 
 /**
- * Trigger regex — matches from the second character onwards (`:Do`, `:Dog`).
- * Restricted to ASCII word characters + spaces so that non-ASCII input
- * (e.g. Cyrillic: `:sob фыва`) does not trigger the suggester. uFuzzy
- * silently ignores non-ASCII tokens, which would cause `:sob фыва` to behave
- * identically to `:sob` and return results unexpectedly.
- * Spaces are still allowed after the first character for multi-word searches
- * like `:flag united`.
- * Exported for unit testing.
+ * Match shortcode queries from the second ASCII character, allowing spaces for multi-word searches.
+ * Reject non-ASCII tokens because uFuzzy otherwise ignores them and returns misleading matches.
  */
-export const QUERY_REGEX = /(?<key>[^\s:]+)?(?<col>:+)(?<sc>[a-zA-Z0-9_-][a-zA-Z0-9_ -]+)$/
+export const QUERY_REGEX = /(?<key>[^\s:]+)?(?<col>:+)(?<sc>[a-zA-Z0-9_+-][a-zA-Z0-9_ +-]+)$/
 
-/**
- * Trigger regex — also matches from the very first character (`:3`, `:D`).
- * Same ASCII restriction as QUERY_REGEX.
- * Exported for unit testing.
- */
-export const QUERY_REGEX_FI = /(?<key>[^\s:]+)?(?<col>:+)(?<sc>[a-zA-Z0-9_-][a-zA-Z0-9_ -]*)$/
+/** Match shortcode queries from the first character, using the same ASCII restrictions. */
+export const QUERY_REGEX_FI = /(?<key>[^\s:]+)?(?<col>:+)(?<sc>[a-zA-Z0-9_+-][a-zA-Z0-9_ +-]*)$/
 
 
 // import DefinitionListPostProcessor from './definitionListPostProcessor';
-interface ExtGemoji extends Gemoji {
-	/** match range */
-	range: [number, number]
+interface EmojiSuggestion extends Gemoji {
+	/** Alternating start/end offsets used to highlight matched text. */
+	range: uFuzzy.Info['ranges'][number]
 	matchedName: string,
 	isInHistory: boolean,
-	matchedBy: 'name' | 'tag' | 'mystery'
+	matchedBy: 'name' | 'tag'
 }
 
 export default class EmojiShortcodesPlugin extends Plugin {
@@ -151,8 +138,11 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		this.addSettingTab(new EmojiPluginSettingTab(this.app, this));
 		this.registerEditorSuggest(new EmojiSuggester(this));
 
-		this.registerMarkdownPostProcessor(emojiProcessor);
-		//this.registerMarkdownPostProcessor(DefinitionListPostProcessor.definitionListProcessor);
+		this.registerMarkdownPostProcessor(el => emojiProcessor(el, shortcode => {
+			const emoji = this.indexedGemojiFromShortcode(shortcode);
+			const resolved = emoji?.names.includes(shortcode) ? emoji.emoji : nameToEmoji[shortcode];
+			return resolved ? this.getEmojiPresentation(resolved) : resolved;
+		}));
 	}
 
 	async loadSettings() {
@@ -163,14 +153,14 @@ export default class EmojiShortcodesPlugin extends Plugin {
 			const legacy = this.settings.history as unknown as string[]
 			this.settings.history = Object.fromEntries(legacy.map(s => [s, 1]))
 		}
-		this.updateEmojiList()
 		this.updateBodyFont(this.settings.polyfillFlags)
+		this.updateEmojiList()
 	}
 
 	async saveSettings(updateEmoji = true, updateFont = false) {
 		await this.saveData(this.settings);
-		if (updateEmoji) this.updateEmojiList();
 		if (updateFont) this.updateBodyFont(this.settings.polyfillFlags);
+		if (updateEmoji || updateFont) this.updateEmojiList();
 	}
 
 	private updateBodyFont(value: boolean | 'toggle' = 'toggle') {
@@ -192,6 +182,8 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	}
 
 	private updateEmojiList() {
+		let isEmojiSupported: ReturnType<typeof createEmojiSupportChecker> | undefined;
+
 		// Clone each emoji's mutable arrays before enriching to prevent duplicate
 		// pushes on subsequent calls (settings saves re-trigger this).
 		this.emojiList = gemoji.map(e => ({ ...e, names: [...e.names], tags: [...e.tags] }))
@@ -204,27 +196,24 @@ export default class EmojiShortcodesPlugin extends Plugin {
 
 		for (let i = 0; i < this.emojiList.length; i++) {
 			const emoji = this.emojiList[i]
-			let supported = true
+			const primaryName = emoji.names[0];
+			let supported = this.settings.emojiSupported[primaryName];
+
+			if (supported === undefined) {
+				// cached results need neither font measurement nor a canvas.
+				isEmojiSupported ??= createEmojiSupportChecker(getEmojiFontStacks());
+				supported = isEmojiSupported(emoji.emoji);
+				this.settings.emojiSupported[primaryName] = supported;
+			}
+			// text symbols do not need to pass the color-emoji rendering check.
+			const usesTextPresentation = this.getEmojiPresentation(emoji.emoji) !== emoji.emoji;
+			if (this.settings.hideUnsupported && !supported && !usesTextPresentation) continue;
 
 			for (const n of emoji.names) {
-				if (!(n in this.settings.emojiSupported)) {
-					if (emoji.category === 'Flags' && emoji.description.startsWith('flag:')
-						|| ((navigator.userAgent.includes('Win') || navigator.userAgent.includes('Linux')) && partiallySupported.includes(n))
-					) {
-						this.settings.emojiSupported[n] = true
-					} else {
-						supported = isEmojiSupported(emoji.emoji)
-						this.settings.emojiSupported[n] = supported
-					}
-				} else if (this.settings.hideUnsupported) {
-					supported = this.settings.emojiSupported[n];
-				}
-
-				if (!supported) continue;
 				shortcodeSet.add(n)
 				this.shortcodeIndexes[n] = i
 			}
-			if (!this.settings.tagSearch || !supported || emoji.tags.length === 0) continue;
+			if (!this.settings.tagSearch || emoji.tags.length === 0) continue;
 			for (const t of emoji.tags) {
 				if (!(t in nameToEmoji)) tagSet.add(t)
 				if (typeof this.shortcodeIndexes[t] === 'undefined') {
@@ -241,6 +230,13 @@ export default class EmojiShortcodesPlugin extends Plugin {
 		console.log(`Updated emoji list: ${this.shortcodeList.length} items, ${tagSet.size} tags.`)
 	}
 
+	/** Request text presentation for ©, ®, and ™ without changing other emoji sequences. */
+	getEmojiPresentation(emoji: string): string {
+		if (!this.settings.preferTextSymbols) return emoji;
+		return emoji.replace(/^([©®™])[\uFE0E\uFE0F]?$/u, '$1\uFE0E');
+	}
+
+	/** Find the emoji for a suggested shortcode or search tag. */
 	indexedGemojiFromShortcode(shortcode: string) {
 		if (!(shortcode in this.shortcodeIndexes)) return null;
 		const index = this.shortcodeIndexes[shortcode]
@@ -266,7 +262,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 	}
 }
 
-class EmojiSuggester extends EditorSuggest<Gemoji> {
+class EmojiSuggester extends EditorSuggest<EmojiSuggestion> {
 	plugin: EmojiShortcodesPlugin;
 	fuzzy: uFuzzy;
 	cmp = new Intl.Collator('en').compare;
@@ -329,38 +325,42 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 		}
 	}
 
-	getSuggestions(context: EditorSuggestContext): Gemoji[] {
+	getSuggestions(context: EditorSuggestContext): EmojiSuggestion[] {
 		let emojiQuery = context.query.replace(/:/g, "")
 		if (this.plugin.settings.latinize) emojiQuery = uFuzzy.latinize(emojiQuery)
 
-		const [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodes as string[], emojiQuery);
-		let suggestions: ExtGemoji[] = []
-
-		// using info.idx here instead of idxs because uf.info() may have
-		// further reduced the initial idxs based on prefix/suffix rules	
-		const idxs2 = info?.idx ?? idxs;
-		for (let i = 0; i < Math.min((order?.length || 0), this.resultLimit); i++) {
-			const index = idxs2[order[i]]
-			const sc = this.plugin.shortcodes[index]
-			const gemoji = this.plugin.indexedGemojiFromShortcode(sc)
-			if (!gemoji) continue;
-			const extGemoji: ExtGemoji = {
-				...gemoji,
-				range: info.ranges[order[i]] as [number, number],
-				matchedName: sc,
-				isInHistory: sc in this.plugin.settings.history,
-				matchedBy: 'mystery'
-			}
-			if (gemoji.tags.includes(sc)) extGemoji.matchedBy = 'tag'
-			else if (gemoji.names.includes(sc)) extGemoji.matchedBy = 'name'
-			suggestions.push(extGemoji)
+		let matches: Pick<EmojiSuggestion, 'matchedName' | 'range'>[];
+		if (/^[+-]/.test(emojiQuery)) {
+			// uFuzzy ignores + and treats - as negation; signed aliases need literal matching.
+			matches = this.plugin.shortcodes
+				.filter(shortcode => shortcode.startsWith(emojiQuery))
+				.slice(0, this.resultLimit)
+				.map(matchedName => ({ matchedName, range: [0, emojiQuery.length] }));
+		} else {
+			const [idxs, info, order] = this.fuzzy.search(this.plugin.shortcodes as string[], emojiQuery);
+			const indexes = info?.idx ?? idxs;
+			matches = (order ?? []).slice(0, this.resultLimit).map(index => ({
+				matchedName: this.plugin.shortcodes[indexes[index]],
+				range: info.ranges[index],
+			}));
 		}
-		// console.timeEnd('query') // we get <1 ms query times on 2k emoji, and 1% max sub 7ms
-		// console.log('query:', emojiQuery, 'sugg:', suggestions, searchResult)
+		const suggestions: EmojiSuggestion[] = [];
+		for (const { matchedName, range } of matches) {
+			const emoji = this.plugin.indexedGemojiFromShortcode(matchedName);
+			if (!emoji) continue;
+
+			suggestions.push({
+				...emoji,
+				range,
+				matchedName,
+				isInHistory: matchedName in this.plugin.settings.history,
+				matchedBy: emoji.names.includes(matchedName) ? 'name' : 'tag',
+			});
+		}
 		return suggestions
 	}
 
-	renderSuggestion(suggestion: ExtGemoji, el: HTMLElement) {
+	renderSuggestion(suggestion: EmojiSuggestion, el: HTMLElement) {
 		const outer = el.createDiv({ cls: "EA-suggester-container" });
 		let shortcodeDiv = createDiv({ cls: "EA-shortcode", title: `shortcode: ${suggestion.names[0]}` })
 		if (this.plugin.settings.highlightMatches) {
@@ -381,19 +381,18 @@ class EmojiSuggester extends EditorSuggest<Gemoji> {
 			}
 		}
 		outer.appendChild(shortcodeDiv)
-		outer.createDiv({ cls: "EA-emoji", title: suggestion.names[0] }).setText(suggestion.emoji);
+		outer.createDiv({ cls: "EA-emoji", title: suggestion.names[0] }).setText(this.plugin.getEmojiPresentation(suggestion.emoji));
 	}
 
-	selectSuggestion(suggestion: ExtGemoji): void {
+	selectSuggestion(suggestion: EmojiSuggestion): void {
 		if (!this.context) return;
 		const { start, end } = this.context;
 		const shortcode = suggestion.names.includes(suggestion.matchedName) ? suggestion.matchedName : suggestion.names[0]
-		const outEm = suggestion.names.some(n => partiallySupported.includes(n)) && suggestion.emoji.split("").length > 1
-			? suggestion.emoji.split("")[0]
-			: suggestion.emoji;
-		const repl = this.plugin.settings.immediateReplace ? outEm : `:${shortcode}: `;
+		const replacement = this.plugin.settings.immediateReplace
+			? this.plugin.getEmojiPresentation(suggestion.emoji)
+			: `:${shortcode}: `;
 
-		this.context.editor.replaceRange(repl, start, end);
+		this.context.editor.replaceRange(replacement, start, end);
 		this.plugin.updateHistory(suggestion.matchedName);
 	}
 }

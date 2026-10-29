@@ -6,6 +6,7 @@ const repoURL = `https://github.com/KraXen72/obsidian-emoji-autocomplete`
 
 export interface EmojiPluginSettings {
 	immediateReplace: boolean;
+	preferTextSymbols: boolean;
 	suggester: boolean;
 	considerHistory: boolean;
 	historyLimit: number;
@@ -23,6 +24,7 @@ export interface EmojiPluginSettings {
 
 export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	immediateReplace: true,
+	preferTextSymbols: true,
 	suggester: true,
 	considerHistory: true,
 	historyLimit: 25,
@@ -208,7 +210,7 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Re-check emoji support')
-			.setDesc('This will clear the supported/unsupported status of all emoji and re-check them.')
+			.setDesc('Test emoji with your selected text and interface fonts. Re-check after changing fonts.')
 			.setClass('EA-sub-setting')
 			.addButton(cb => {
 				cb.setButtonText("Clear & Re-check")
@@ -231,6 +233,17 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 					})
 			});
 
+
+		new Setting(containerEl)
+			.setName('Use text style for ©, ®, and ™')
+			.setDesc('Use text presentation instead of emoji presentation when inserting these symbols or rendering their shortcodes.')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.preferTextSymbols)
+					.onChange(async value => {
+						this.plugin.settings.preferTextSymbols = value;
+						await this.plugin.saveSettings();
+					})
+			});
 
 		const latinFrag = new DocumentFragment()
 		const latinDescW = latinFrag.createDiv({ cls: 'markdown-rendered' })

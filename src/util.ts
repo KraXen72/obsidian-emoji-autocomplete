@@ -1,18 +1,5 @@
-// import { gemoji, type Gemoji } from "gemoji";
-
-// export function gemojiFromShortcode(shortcode: string, emojiList?: Gemoji[]) {
-// 	let match: Gemoji;
-// 	const candidates = emojiList ?? gemoji;
-// 	for (const candidate of candidates) {
-// 		if (candidate.names.some(n => n === shortcode)) {
-// 			match = candidate;
-// 			break;
-// 		}
-// 	}
-// 	return match
-// }
-
-export function slimHighlight(str: string, r: [number, number]) {
+/** Build shortcode markup with alternating start/end match offsets highlighted. */
+export function slimHighlight(str: string, r: readonly number[]) {
 	const el = createDiv({ cls: "EA-shortcode" })
 	el.appendText(str.slice(0, r[0]))
 	for (let i = 0; i < r.length; i = i+2) {
@@ -20,65 +7,6 @@ export function slimHighlight(str: string, r: [number, number]) {
 		el.appendText(str.slice(r[i+1], r[i+2]))
 	}
 	return el
-}
-
-let ctx: CanvasRenderingContext2D = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
-
-const CANVAS_HEIGHT = 25;
-const CANVAS_WIDTH = 20;
-const textSize = Math.floor(CANVAS_HEIGHT / 2);
-
-// Initialize canvas context
-ctx.font = textSize + 'px Arial, Sans-Serif';
-ctx.textBaseline = 'top';
-ctx.canvas.width = CANVAS_WIDTH * 2;
-ctx.canvas.height = CANVAS_HEIGHT;
-
-/** 
- * modified emoji support checker. original credit:
- * @see https://github.com/koala-interactive/is-emoji-supported/blob/master/src/is-emoji-supported.ts
- */
-export function isEmojiSupported(unicode: string) {
-	ctx.clearRect(0, 0, CANVAS_WIDTH * 2, CANVAS_HEIGHT);
-
-	// Draw in red on the left
-	ctx.fillStyle = '#FF0000';
-	ctx.fillText(unicode, 0, 22);
-
-	// Draw in blue on right
-	ctx.fillStyle = '#0000FF';
-	ctx.fillText(unicode, CANVAS_WIDTH, 22);
-
-	const a = ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT).data;
-	const count = a.length;
-	let i = 0;
-
-	// Search the first visible pixel
-	for (; i < count && !a[i + 3]; i += 4);
-
-	// No visible pixel
-	if (i >= count) {
-		return false;
-	}
-
-	// Emoji has immutable color, so we check the color of the emoji in two different colors
-	// the result should be the same.
-	const x = CANVAS_WIDTH + ((i / 4) % CANVAS_WIDTH);
-	const y = Math.floor(i / 4 / CANVAS_WIDTH);
-	const b = ctx.getImageData(x, y, 1, 1).data;
-
-	if (a[i] !== b[0] || a[i + 2] !== b[2]) {
-		return false;
-	}
-
-	// Some emojis are a contraction of different ones, so if it's not
-	// supported, it will show multiple characters
-	if (ctx.measureText(unicode).width >= CANVAS_WIDTH) {
-		return false;
-	}
-
-	// Supported
-	return true;
 }
 
 const materialIconsSVGattr = { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24' }

@@ -29,19 +29,15 @@ if (prod) {
 	fontReplacement = 'https://esm.sh/country-flag-emoji-polyfill@0.1.4/dist/TwemojiCountryFlags.woff2'
 }
 
-// --- live refresh setup
-const vaultFolder = "/media/win/#blackhole/"
-const pluginFolder = path.resolve(vaultFolder, ".obsidian", "plugins", manifest.id)
-const hotreloadPath = path.resolve(pluginFolder, '.hotreload')
-const copyCandidates = ['styles.css', 'main.js', 'manifest.json']
-	.map(f => ({ 
-		bare: f,
-		src: path.resolve(import.meta.dirname, f),
-		dest: path.resolve(pluginFolder, f)
-	}))
-
-fs.mkdirSync(pluginFolder, { recursive: true });
-fs.writeFileSync(hotreloadPath, '', { flag: 'a' }) // no-op if .hotreload exists
+// Development builds can copy into a vault for Obsidian's Hot Reload plugin.
+// An empty OBSIDIAN_VAULT disables copying; production builds never copy.
+const defaultVault = ['/mnt/c/Blackhole', '/media/win/#blackhole']
+	.find(folder => fs.existsSync(path.join(folder, '.obsidian')));
+const vaultFolder = process.env.OBSIDIAN_VAULT ?? defaultVault;
+const pluginFolder = !prod && vaultFolder
+	? path.resolve(vaultFolder, '.obsidian', 'plugins', manifest.id)
+	: null;
+const copyCandidates = ['styles.css', 'main.js', 'manifest.json'];
 
 /** @type {import('esbuild').BuildOptions} */
 const config = {
@@ -77,31 +73,27 @@ const config = {
 	outdir: "./",
 	plugins: [
 		replace({ '__emojiFontUrl__': fontReplacement }),
-		{
+		...(pluginFolder ? [{
 			name: 'copy-to-vault',
 			setup(build) {
-				build.onEnd(r => {
-					if (r.errors.length > 0) {
-						console.error(r.errors.join("\n")); 
-						return;
+				build.onEnd(result => {
+					if (result.errors.length > 0) return;
+					fs.mkdirSync(pluginFolder, { recursive: true });
+					for (const file of copyCandidates) {
+						fs.copyFileSync(path.resolve(import.meta.dirname, file), path.join(pluginFolder, file));
 					}
-					copyCandidates.forEach(({ src, dest }) => {
-						if (!fs.existsSync(src)) {
-							console.error(`file ${src} doesn't exist! skipping copy...`);
-							return; 
-						}
-						fs.copyFileSync(src, dest)
-					})
-				})
+					fs.writeFileSync(path.join(pluginFolder, '.hotreload'), '', { flag: 'a' });
+					console.log(`Copied development build to ${pluginFolder}`);
+				});
 			}
-		}
+		}] : [])
 	]
 }
 const context = await esbuild.context(config);
 
-if (prod) {
+if (prod || process.argv.includes('--once')) {
 	await context.rebuild();
-	process.exit(0);
+	await context.dispose();
 } else {
 	await context.watch();
 }

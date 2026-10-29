@@ -1,28 +1,34 @@
-import { nameToEmoji } from 'gemoji'
+import { nameToEmoji } from 'gemoji';
 
-const shortcodeRegex = /[:][^\s:][^ \n:]*[:]/g
+const shortcodeRegex = /[:][^\s:][^ \n:]*[:]/g;
+type EmojiResolver = (shortcode: string) => string | undefined;
 
-export function emojiProcessor(el: HTMLElement) {
-	// textContent instead of innerText to avoid forcing style recalculations
-	if (el.textContent.indexOf(":") === -1) return;
-	const matches = el.textContent.match(shortcodeRegex)
-	if (matches == null) return;
-	for (let i = 0; i < matches.length; i++) {
-		emojiReplace(el, matches[i])
-	}
+/** Replace shortcodes in rendered Markdown, leaving code and math nodes intact. */
+export function emojiProcessor(
+	el: HTMLElement,
+	resolveEmoji: EmojiResolver = shortcode => nameToEmoji[shortcode],
+): void {
+	// textContent avoids the layout work caused by innerText.
+	if (!el.textContent?.includes(':')) return;
+
+	replaceShortcodes(el, resolveEmoji);
 }
 
-function emojiReplace(el: HTMLElement, shortcode: string) {
-	if (el.tagName === "CODE" || el.tagName === "MJX") return false;
-	if (el.hasChildNodes()) {
-		for (let i = 0; i < el.childNodes.length; i++) {
-			emojiReplace(el.childNodes[i] as HTMLElement, shortcode);
-		}
-	} else {
-		if (!el.textContent.includes(shortcode)) return false;
-		const sc = shortcode.slice(1, -1); // slice off the :
-		const emoji = nameToEmoji[sc]
-		if (emoji == null) return false;
-		el.textContent = el.textContent.replace(shortcode, emoji);
+function replaceShortcodes(node: Node, resolveEmoji: EmojiResolver): void {
+	if (node.nodeName === 'CODE' || node.nodeName.startsWith('MJX')) return;
+
+	if (node.nodeType !== Node.TEXT_NODE) {
+		node.childNodes.forEach(child => replaceShortcodes(child, resolveEmoji));
+		return;
 	}
+
+	const text = node.textContent ?? '';
+	if (!text.includes(':')) return;
+
+	const replaced = text.replace(shortcodeRegex, shortcode => {
+		const name = shortcode.slice(1, -1);
+		return resolveEmoji(name) ?? shortcode;
+	});
+	// avoid mutation notifications and rendering work when nothing was replaced.
+	if (replaced !== text) node.textContent = replaced;
 }
