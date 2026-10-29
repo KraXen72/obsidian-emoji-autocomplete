@@ -21,14 +21,14 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: latest
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install
 
-      - name: Test
-        run: pnpm test
+      - name: Test with coverage
+        run: pnpm run test:coverage
 
       - name: Build
         run: pnpm run build

@@ -3,10 +3,15 @@ import { nameToEmoji } from 'gemoji';
 const shortcodeRegex = /[:][^\s:][^ \n:]*[:]/g;
 type EmojiResolver = (shortcode: string) => string | undefined;
 
+/** Resolve database shortcode names without accepting inherited object properties. */
+export function emojiFromShortcode(shortcode: string): string | undefined {
+	return Object.prototype.hasOwnProperty.call(nameToEmoji, shortcode) ? nameToEmoji[shortcode] : undefined;
+}
+
 /** Replace shortcodes in rendered Markdown, leaving code and math nodes intact. */
 export function emojiProcessor(
 	el: HTMLElement,
-	resolveEmoji: EmojiResolver = shortcode => nameToEmoji[shortcode],
+	resolveEmoji: EmojiResolver = emojiFromShortcode,
 ): void {
 	// textContent avoids the layout work caused by innerText.
 	if (!el.textContent?.includes(':')) return;

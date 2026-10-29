@@ -1,9 +1,9 @@
 
 import { Plugin, EditorSuggest, Editor, EditorPosition, TFile, EditorSuggestTriggerInfo, EditorSuggestContext, Notice } from 'obsidian';
-import { gemoji, nameToEmoji, type Gemoji } from 'gemoji'
+import { gemoji, type Gemoji } from 'gemoji'
 import uFuzzy from '@leeoniya/ufuzzy';
 
-import { emojiProcessor } from './emojiPostProcessor';
+import { emojiFromShortcode, emojiProcessor } from './emojiPostProcessor';
 import { DEFAULT_SETTINGS, EmojiPluginSettings, EmojiPluginSettingTab } from './settings';
 import { slimHighlight, iconFactory } from './util';
 import { createEmojiSupportChecker, getEmojiFontStacks } from './emojiSupport';
@@ -140,7 +140,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 
 		this.registerMarkdownPostProcessor(el => emojiProcessor(el, shortcode => {
 			const emoji = this.indexedGemojiFromShortcode(shortcode);
-			const resolved = emoji?.names.includes(shortcode) ? emoji.emoji : nameToEmoji[shortcode];
+			const resolved = emoji?.names.includes(shortcode) ? emoji.emoji : emojiFromShortcode(shortcode);
 			return resolved ? this.getEmojiPresentation(resolved) : resolved;
 		}));
 	}
@@ -215,7 +215,7 @@ export default class EmojiShortcodesPlugin extends Plugin {
 			}
 			if (!this.settings.tagSearch || emoji.tags.length === 0) continue;
 			for (const t of emoji.tags) {
-				if (!(t in nameToEmoji)) tagSet.add(t)
+				if (emojiFromShortcode(t) === undefined) tagSet.add(t)
 				if (typeof this.shortcodeIndexes[t] === 'undefined') {
 					shortcodeSet.add(t)
 					this.shortcodeIndexes[t] ??= i

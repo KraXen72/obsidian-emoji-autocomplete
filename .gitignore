@@ -22,3 +22,6 @@ data.json
 .DS_Store
 repomix-output.xml
 /.playwright-cli
+
+# Test coverage reports
+coverage/
