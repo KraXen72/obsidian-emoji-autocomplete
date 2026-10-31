@@ -48,7 +48,7 @@ describe('popout window compatibility', () => {
 		const frame = document.createElement('iframe');
 		document.body.append(frame);
 		vi.stubGlobal('activeDocument', frame.contentDocument);
-		const getContext = vi.spyOn(frame.contentWindow.HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+		const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 
 		const supported = createEmojiSupportChecker(['Popout Font']);
 

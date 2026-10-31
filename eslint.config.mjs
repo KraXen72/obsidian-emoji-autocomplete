@@ -13,12 +13,6 @@ function asWarnings(config) {
 	return { ...config, rules: Object.fromEntries(warningRules) };
 }
 
-// Keep the official restriction list, allowing only documented exceptions for
-// detached popout DOM nodes and the version-guarded settings fallback.
-const restrictedDisableConfig = obsidianmd.configs.recommended.find(config =>
-	config.rules?.['eslint-comments/no-restricted-disable']);
-const [, ...restrictedDisablePatterns] = restrictedDisableConfig.rules['eslint-comments/no-restricted-disable'];
-
 export default [
 	{ ignores: ['node_modules/**', 'main.js', 'tests/**', 'scripts/**', 'coverage/**', 'reports/**', '*.mjs'] },
 	...obsidianmd.configs.recommended.map(asWarnings),
@@ -29,21 +23,6 @@ export default [
 		},
 		rules: { 'obsidianmd/prefer-active-doc': 'warn' },
 	},
-	{
-		files: ['src/settings.ts'],
-		rules: {
-			'eslint-comments/no-restricted-disable': ['warn', ...restrictedDisablePatterns,
-				'!obsidianmd/no-unsupported-api', '!@typescript-eslint/no-deprecated'],
-		},
-	},
-	{
-		files: ['src/emojiSupport.ts', 'src/util.ts'],
-		rules: {
-			'eslint-comments/no-restricted-disable': ['warn', ...restrictedDisablePatterns,
-				'!obsidianmd/prefer-create-el'],
-		},
-	},
-
 	{
 		linterOptions: { reportUnusedDisableDirectives: 'warn', reportUnusedInlineConfigs: 'warn' },
 	},

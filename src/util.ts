@@ -43,8 +43,7 @@ export function iconFactory(name: keyof typeof iconDefinitions) {
 	}
 
 	const definition = iconDefinitions[name];
-	// eslint-disable-next-line obsidianmd/prefer-create-el -- keep detached SVG nodes in the active document, including popouts.
-	const container = activeDocument.createDocumentFragment();
+	const container = activeDocument.adoptNode(createFragment());
 	const icon = container.createSvg('svg', {
 		attr: {
 			xmlns: 'http://www.w3.org/2000/svg',

@@ -1,7 +1,13 @@
-import { Setting } from 'obsidian';
+import * as obsidian from 'obsidian';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { installCanvas } from './support/canvas';
 import { startPlugin } from './support/plugin';
+
+// The host library always reports the newest API; select a version per test.
+vi.mock('obsidian', async importOriginal => {
+	const host = await importOriginal();
+	return { ...host, requireApiVersion: vi.fn(host.requireApiVersion) };
+});
 
 describe.each(['legacy', 'declarative'])('%s settings controls', mode => {
 	let plugin;
@@ -13,8 +19,9 @@ describe.each(['legacy', 'declarative'])('%s settings controls', mode => {
 		tab = plugin.settingTabs__[0];
 		// The mock host does not render declarative settings. Model that host entry
 		// point explicitly, and remove the new API when testing the legacy fallback.
+		vi.mocked(obsidian.requireApiVersion).mockReturnValue(mode === 'declarative');
 		tab.update = mode === 'declarative' ? vi.fn(renderDefinitions) : undefined;
-		rows = vi.spyOn(Setting.prototype, 'constructor__');
+		rows = vi.spyOn(obsidian.Setting.prototype, 'constructor__');
 		renderTab();
 	});
 
@@ -23,7 +30,7 @@ describe.each(['legacy', 'declarative'])('%s settings controls', mode => {
 		for (const definition of tab.getSettingDefinitions()) {
 			if (definition.visible && !definition.visible()) continue;
 
-			const row = new Setting(tab.containerEl).setName(definition.name);
+			const row = new obsidian.Setting(tab.containerEl).setName(definition.name);
 			if (definition.desc) row.setDesc(definition.desc);
 			definition.render(row);
 		}
@@ -68,10 +75,9 @@ describe.each(['legacy', 'declarative'])('%s settings controls', mode => {
 		expect(tab.containerEl.textContent).not.toContain('Show shortcode on tag results');
 		if (mode === 'declarative') {
 			expect(tab.update).toHaveBeenCalledOnce();
-			expect(display).not.toHaveBeenCalled();
-		} else {
-			expect(display).toHaveBeenCalledOnce();
 		}
+		expect(display).not.toHaveBeenCalled();
+		expect(obsidian.requireApiVersion).toHaveBeenCalledWith('1.13.0');
 	});
 
 	it('shows text-style symbols enabled when no preference has been saved', () => {

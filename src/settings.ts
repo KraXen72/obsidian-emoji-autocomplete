@@ -1,5 +1,5 @@
 
-import { PluginSettingTab, App, Setting, Notice, type SettingDefinitionRender } from "obsidian";
+import { PluginSettingTab, App, Setting, Notice, requireApiVersion, type SettingDefinitionRender } from "obsidian";
 import EmojiShortcodesPlugin from "./main";
 
 const repoURL = `https://github.com/KraXen72/obsidian-emoji-autocomplete`
@@ -40,10 +40,15 @@ export const DEFAULT_SETTINGS: EmojiPluginSettings = {
 	polyfillFlags: false,
 }
 
-// The legacy renderer has no SettingGroup to pass to render callbacks.
-type EmojiSettingDefinition = Omit<SettingDefinitionRender, 'render'> & {
+/** Plugin-owned metadata shared by modern and legacy settings renderers. */
+interface EmojiSettingDefinition {
+	name: string;
+	desc?: string | DocumentFragment;
+	visible?: boolean | (() => boolean);
+	searchable?: boolean;
+	aliases?: string[];
 	render: (setting: Setting) => void;
-};
+}
 
 export class EmojiPluginSettingTab extends PluginSettingTab {
 	plugin: EmojiShortcodesPlugin;
@@ -55,9 +60,12 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 
 	/** Render the shared definitions on Obsidian versions before 1.13. */
 	display(): void {
-		/* eslint-disable obsidianmd/no-unsupported-api -- these definitions are plugin-owned data; reading them does not require the new host API. */
+		this.renderLegacySettings();
+	}
+
+	private renderLegacySettings(): void {
 		this.containerEl.empty();
-		for (const definition of this.getSettingDefinitions()) {
+		for (const definition of this.createSettingDefinitions()) {
 			const visible = typeof definition.visible === 'function'
 				? definition.visible()
 				: definition.visible !== false;
@@ -67,19 +75,20 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 			if (definition.desc) setting.setDesc(definition.desc);
 			definition.render(setting);
 		}
-		/* eslint-enable obsidianmd/no-unsupported-api -- resume host API version checks. */
 	}
 
 	/** Refresh through the declarative API when available, or the legacy renderer. */
 	private refresh(): void {
-		// eslint-disable-next-line obsidianmd/no-unsupported-api -- call the new API only when the host provides it.
-		if (typeof this.update === 'function') this.update();
-		// eslint-disable-next-line @typescript-eslint/no-deprecated -- older hosts require the legacy renderer.
-		else this.display();
+		if (requireApiVersion('1.13.0')) this.update();
+		else this.renderLegacySettings();
 	}
 
 	/** Describe searchable settings while retaining the save handlers and their side effects. */
-	getSettingDefinitions(): EmojiSettingDefinition[] {
+	getSettingDefinitions(): SettingDefinitionRender[] {
+		return this.createSettingDefinitions();
+	}
+
+	private createSettingDefinitions(): EmojiSettingDefinition[] {
 		const definitions: EmojiSettingDefinition[] = [];
 
 		definitions.push({
@@ -381,7 +390,6 @@ export class EmojiPluginSettingTab extends PluginSettingTab {
 		return definitions.map(definition => ({
 			...definition,
 			render: setting => {
-				// eslint-disable-next-line obsidianmd/no-unsupported-api -- desc is plugin-owned metadata, available on both rendering paths.
 				if (!definition.desc) setting.setClass('EA-no-desc-setting');
 				definition.render(setting);
 			},

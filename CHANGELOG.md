@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.2 - 2026-10-31
+
+- Remove the lint-rule suppressions that caused the community directory's automated review to reject the previous release.
+- Create detached font probes, canvases, and icons with Obsidian's DOM helpers, then adopt them into the active document to preserve popout support.
+- Guard the modern settings refresh API with `requireApiVersion('1.13.0')` and refresh older settings through the shared legacy renderer without calling a deprecated API.
+- Keep settings metadata in the plugin's shared definitions, with no dependency on new host APIs when rendering on older Obsidian versions.
+- Restore the official restrictions on disabling lint rules in the local advisory checker.
+
 ## 1.6.1 - 2026-10-29
 
 - Migrate to Obsidian's declarative settings API so plugin settings can appear in settings search on Obsidian 1.13 and later.

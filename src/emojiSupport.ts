@@ -4,9 +4,7 @@ const MAX_EMOJI_WIDTH = FONT_SIZE * 1.5;
 
 /** Resolve the active window's text and interface stacks, including theme and user overrides. */
 export function getEmojiFontStacks(): string[] {
-	// eslint-disable-next-line obsidianmd/prefer-create-el -- create the probe in the active document, including popouts.
-	const probe = activeDocument.createElement('span');
-	probe.className = 'EA-font-probe EA-emoji';
+	const probe = activeDocument.adoptNode(createSpan({ cls: 'EA-font-probe EA-emoji' }));
 	activeDocument.body.appendChild(probe);
 
 	try {
@@ -25,8 +23,8 @@ export function getEmojiFontStacks(): string[] {
  * Width is a heuristic for detecting sequences rendered as separate glyphs.
  */
 export function createEmojiSupportChecker(fontStacks: readonly string[]): (emoji: string) => boolean {
-	// eslint-disable-next-line obsidianmd/prefer-create-el -- create a detached canvas in the active document, including popouts.
-	const canvas = activeDocument.createElement('canvas');
+	// global helpers may create nodes in the main window; adopt before measuring fonts.
+	const canvas = activeDocument.adoptNode(createEl('canvas'));
 	canvas.width = CANVAS_SIZE;
 	canvas.height = CANVAS_SIZE;
 	const context = canvas.getContext('2d', { willReadFrequently: true });
